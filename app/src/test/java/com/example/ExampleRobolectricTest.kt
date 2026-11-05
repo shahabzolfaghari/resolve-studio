@@ -112,4 +112,53 @@ class ExampleRobolectricTest {
     assertEquals(5, vm.timelineClips.value.size)
     assertEquals(4, vm.activeClipIndex.value)
   }
+
+  @Test
+  fun `test normalized cross correlation motion tracker tracks target displacement`() {
+    val w = 80
+    val h = 80
+    val bmp1 = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val bmp2 = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+
+    // In frame 1, put a bright 12x12 feature block at (40, 40)
+    for (y in 0 until h) {
+      for (x in 0 until w) {
+        val c1 = if (x in 34..46 && y in 34..46) 0xFFEEEEEE.toInt() else 0xFF222222.toInt()
+        bmp1.setPixel(x, y, c1)
+
+        // In frame 2, shift the feature block +6px right and +4px down -> (46, 44)
+        val c2 = if (x in 40..52 && y in 38..50) 0xFFEEEEEE.toInt() else 0xFF222222.toInt()
+        bmp2.setPixel(x, y, c2)
+      }
+    }
+
+    val initCx = 40f / w
+    val initCy = 40f / h
+    val res = SamsungLogColorScience.trackMaskPattern(
+      previousBitmap = bmp1,
+      currentBitmap = bmp2,
+      centerX = initCx,
+      centerY = initCy,
+      radiusX = 0.20f,
+      radiusY = 0.20f
+    )
+
+    // The tracker should detect displacement and achieve strong positive confidence
+    assertTrue("Tracker confidence (${res.confidence}) should be high (> 0.60)", res.confidence > 0.60f)
+    assertTrue("Tracker X (${res.centerX}) should move toward 0.57", res.centerX > initCx)
+    assertTrue("Tracker Y (${res.centerY}) should move toward 0.55", res.centerY > initCy)
+  }
+
+  @Test
+  fun `test periodic hue spline lut wrap around boundary`() {
+    val points = listOf(
+      com.example.model.CurvePoint(0.05f, 0.65f), // red boost near 0 deg
+      com.example.model.CurvePoint(0.50f, 0.50f),
+      com.example.model.CurvePoint(0.95f, 0.65f)  // matching red boost near 360 deg
+    )
+    val lut = SamsungLogColorScience.buildPeriodicSplineLut(points)
+    assertEquals(256, lut.size)
+    // Red seam: values at 0 and 255 should be smooth and close to each other
+    assertTrue("Boundary 0 (${lut[0]}) and 255 (${lut[255]}) should match closely", kotlin.math.abs(lut[0] - lut[255]) < 0.05f)
+  }
 }

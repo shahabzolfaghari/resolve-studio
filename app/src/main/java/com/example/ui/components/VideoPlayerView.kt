@@ -233,8 +233,8 @@ fun VideoPlayerView(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Main Video Surface Box
-            Box(
+            // Main Video Surface Box (fitted 16:9 viewport with exact video-rect mask alignment)
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
@@ -243,6 +243,20 @@ fun VideoPlayerView(
                     .border(1.dp, StudioCardBorder, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
+                val boxWidth = maxWidth
+                val boxHeight = maxHeight
+                val bmp = gradedBitmap ?: rawBitmap
+                val (contentWidth, contentHeight) = if (bmp != null && bmp.height > 0) {
+                    val bmpAspect = bmp.width.toFloat() / bmp.height.toFloat()
+                    val boxAspect = 16f / 9f
+                    if (bmpAspect > boxAspect) {
+                        Pair(boxWidth, boxWidth / bmpAspect)
+                    } else {
+                        Pair(boxHeight * bmpAspect, boxHeight)
+                    }
+                } else {
+                    Pair(boxWidth, boxHeight)
+                }
                 // 1. Render graded frame (full frame base)
                 gradedBitmap?.let { bmp ->
                     Image(
@@ -414,9 +428,15 @@ fun VideoPlayerView(
                     }
                 }
 
-                // 4. Interactive Mask Overlay Guide
+                // 4. Interactive Mask Overlay Guide (B-5: Aligned strictly to the fitted video content bounds)
                 if (isMaskWireframeVisible) {
-                    PowerWindowVisualGuide(mask = mask, onMaskChange = onMaskChange)
+                    Box(
+                        modifier = Modifier
+                            .size(contentWidth, contentHeight)
+                            .align(Alignment.Center)
+                    ) {
+                        PowerWindowVisualGuide(mask = mask, onMaskChange = onMaskChange)
+                    }
                 }
 
                 // 5. Real-time Histogram & Vectorscope Overlay HUD

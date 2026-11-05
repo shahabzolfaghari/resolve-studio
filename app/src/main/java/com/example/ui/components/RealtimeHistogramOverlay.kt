@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.sp
 import com.example.color.HistogramData
 import com.example.color.SamsungLogColorScience
 import com.example.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -65,9 +67,12 @@ fun RealtimeHistogramOverlay(
     val activeBitmap = if (inspectRawLog && rawBitmap != null) rawBitmap else gradedBitmap
     if (activeBitmap == null) return
 
-    val histogram = remember(activeBitmap) {
-        SamsungLogColorScience.calculateHistogram(activeBitmap)
+    val histogramState by produceState<HistogramData?>(initialValue = null, activeBitmap) {
+        value = withContext(Dispatchers.Default) {
+            SamsungLogColorScience.calculateHistogram(activeBitmap)
+        }
     }
+    val histogram = histogramState ?: return
 
     val overlayWidth = if (isExpanded) 250.dp else 175.dp
     val overlayHeight = if (isExpanded) {
@@ -404,6 +409,32 @@ private fun HistogramOverlayCanvas(
 
 @Composable
 private fun VectorscopeOverlayCanvas(bitmap: Bitmap) {
+    // P-6: Extract chrominance coordinates on background coroutine
+    val chromaSamples by produceState<List<Offset>>(initialValue = emptyList(), bitmap) {
+        value = withContext(Dispatchers.Default) {
+            val step = 14
+            val bmpW = bitmap.width
+            val bmpH = bitmap.height
+            val pixels = IntArray(bmpW * bmpH)
+            bitmap.getPixels(pixels, 0, bmpW, 0, 0, bmpW, bmpH)
+            val list = ArrayList<Offset>((bmpW / step) * (bmpH / step))
+            for (y in 0 until bmpH step step) {
+                val row = y * bmpW
+                for (x in 0 until bmpW step step) {
+                    val p = pixels[row + x]
+                    val r = (p shr 16 and 0xFF) / 255f
+                    val g = (p shr 8 and 0xFF) / 255f
+                    val b = (p and 0xFF) / 255f
+
+                    val cb = -0.168736f * r - 0.331264f * g + 0.5f * b
+                    val cr = 0.5f * r - 0.418688f * g - 0.081312f * b
+                    list.add(Offset(cb, cr))
+                }
+            }
+            list
+        }
+    }
+
     Canvas(modifier = Modifier.fillMaxSize().padding(3.dp)) {
         val w = size.width
         val h = size.height
@@ -450,34 +481,15 @@ private fun VectorscopeOverlayCanvas(bitmap: Bitmap) {
             )
         }
 
-        // 5. Sample bitmap chroma pixels
-        val step = 14
-        val bmpW = bitmap.width
-        val bmpH = bitmap.height
-        val pixels = IntArray(bmpW * bmpH)
-        bitmap.getPixels(pixels, 0, bmpW, 0, 0, bmpW, bmpH)
-
-        for (y in 0 until bmpH step step) {
-            val row = y * bmpW
-            for (x in 0 until bmpW step step) {
-                val p = pixels[row + x]
-                val r = (p shr 16 and 0xFF) / 255f
-                val g = (p shr 8 and 0xFF) / 255f
-                val b = (p and 0xFF) / 255f
-
-                // Cb, Cr chrominance coordinates
-                val cb = -0.168736f * r - 0.331264f * g + 0.5f * b
-                val cr = 0.5f * r - 0.418688f * g - 0.081312f * b
-
-                val px = center.x + cb * radius * 1.8f
-                val py = center.y - cr * radius * 1.8f
-
-                drawCircle(
-                    color = ResolveCyan.copy(alpha = 0.45f),
-                    radius = 1.1.dp.toPx(),
-                    center = Offset(px, py)
-                )
-            }
+        // 5. Draw sampled chroma dots
+        for (sample in chromaSamples) {
+            val px = center.x + sample.x * radius * 1.8f
+            val py = center.y - sample.y * radius * 1.8f
+            drawCircle(
+                color = ResolveCyan.copy(alpha = 0.45f),
+                radius = 1.1.dp.toPx(),
+                center = Offset(px, py)
+            )
         }
     }
 }

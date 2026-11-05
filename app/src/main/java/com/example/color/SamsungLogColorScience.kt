@@ -389,86 +389,6 @@ object SamsungLogColorScience {
         val result = if (mask.invert) 1.0f - rawWeight else rawWeight
         return result.coerceIn(0f, 1f)
     }
-        val dy = v - mask.centerY
-
-        // Rotate point according to mask rotation
-        val rad = Math.toRadians(-mask.rotationDeg.toDouble()).toFloat()
-        val cosR = cos(rad)
-        val sinR = sin(rad)
-        val rx = dx * cosR - dy * sinR
-        val ry = dx * sinR + dy * cosR
-
-        val rawWeight: Float = when (mask.type) {
-            MaskType.ELLIPTICAL -> {
-                val rxNorm = rx / mask.radiusX.coerceAtLeast(0.01f)
-                val ryNorm = ry / mask.radiusY.coerceAtLeast(0.01f)
-                val dist = sqrt(rxNorm * rxNorm + ryNorm * ryNorm)
-                val inner = (1.0f - mask.feather).coerceAtLeast(0f)
-                if (dist <= inner) 1.0f
-                else if (dist >= 1.0f) 0.0f
-                else {
-                    val t = (dist - inner) / (1.0f - inner)
-                    1.0f - (t * t * (3f - 2f * t)) // Smoothstep
-                }
-            }
-            MaskType.RECTANGULAR -> {
-                val halfW = mask.radiusX.coerceAtLeast(0.02f)
-                val halfH = mask.radiusY.coerceAtLeast(0.02f)
-                val featherW = (halfW * mask.feather).coerceAtLeast(0.005f)
-                val featherH = (halfH * mask.feather).coerceAtLeast(0.005f)
-
-                val qx = abs(rx) - (halfW - featherW)
-                val qy = abs(ry) - (halfH - featherH)
-
-                val dist: Float = max(qx / featherW, qy / featherH)
-                if (dist <= 0f) 1.0f
-                else if (dist >= 1.0f) 0.0f
-                else {
-                    val t = dist.coerceIn(0f, 1f)
-                    1.0f - (t * t * (3f - 2f * t)) // Smoothstep
-                }
-            }
-            MaskType.TRIANGLE -> {
-                val halfW = mask.radiusX.coerceAtLeast(0.02f)
-                val halfH = mask.radiusY.coerceAtLeast(0.02f)
-                val nx = rx / halfW
-                val ny = ry / halfH
-                // Apex at (0, -1), base from (-1, +1) to (+1, +1)
-                val spanAtY = ((ny + 1f) * 0.5f).coerceAtLeast(0f)
-                val dSide = (abs(nx) - spanAtY) * 0.894f // normalized perpendicular distance to sloped edge
-                val dBottom = ny - 1f
-                val dTop = -1f - ny
-                val signedEdgeDist = max(dSide, max(dBottom, dTop))
-                val featherBand = mask.feather.coerceAtLeast(0.02f)
-                val inner = -featherBand * 0.5f
-                val outer = featherBand * 0.5f
-                if (signedEdgeDist <= inner) 1.0f
-                else if (signedEdgeDist >= outer) 0.0f
-                else {
-                    val t = ((signedEdgeDist - inner) / (outer - inner)).coerceIn(0f, 1f)
-                    1.0f - (t * t * (3f - 2f * t))
-                }
-            }
-            MaskType.LINEAR -> {
-                val dist = ry / mask.radiusY.coerceAtLeast(0.01f)
-                val inner = -mask.feather
-                val outer = mask.feather
-                if (dist <= inner) 1.0f
-                else if (dist >= outer) 0.0f
-                else {
-                    val t = (dist - inner) / (outer - inner)
-                    1.0f - (t * t * (3f - 2f * t))
-                }
-            }
-            MaskType.CUSTOM_BEZIER -> {
-                evaluateBezierMask(u, v, mask)
-            }
-            MaskType.NONE -> 1.0f
-        }
-
-        val result = if (mask.invert) 1.0f - rawWeight else rawWeight
-        return result.coerceIn(0f, 1f)
-    }
 
     /**
      * Apply complete color grading pipeline to an in-memory Bitmap.
@@ -1524,9 +1444,9 @@ object SamsungLogColorScience {
             ire <= 2f -> { out[0] = 0.55f; out[1] = 0.0f; out[2] = 0.85f }
             ire <= 10f -> { out[0] = 0.0f; out[1] = 0.35f; out[2] = 0.95f }
             ire <= 38f -> { out[0] = 0.1f; out[1] = 0.45f; out[2] = 0.55f }
-            ire in 38f..44f -> { out[0] = 0.0f; out[1] = 0.85f; out[2] = 0.2f }
-            ire in 48f..56f -> { out[0] = 1.0f; out[1] = 0.45f; out[2] = 0.75f }
-            ire in 80f..95f -> { out[0] = 0.95f; out[1] = 0.90f; out[2] = 0.0f }
+            ire >= 38f && ire <= 44f -> { out[0] = 0.0f; out[1] = 0.85f; out[2] = 0.2f }
+            ire >= 48f && ire <= 56f -> { out[0] = 1.0f; out[1] = 0.45f; out[2] = 0.75f }
+            ire >= 80f && ire <= 95f -> { out[0] = 0.95f; out[1] = 0.90f; out[2] = 0.0f }
             ire > 95f -> { out[0] = 0.95f; out[1] = 0.05f; out[2] = 0.05f }
             else -> {
                 val gray = (ire / 100f) * 0.7f
@@ -1779,7 +1699,6 @@ data class TrackerResult(
     val centerY: Float,
     val confidence: Float // 0.0f .. 1.0f
 )
-}
 
 data class HistogramData(
     val redBins: IntArray,

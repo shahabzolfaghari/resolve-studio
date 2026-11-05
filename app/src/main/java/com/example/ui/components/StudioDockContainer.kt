@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.*
 import com.example.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 enum class DockMonitorMode(val label: String, val icon: ImageVector) {
     SPLIT_SCOPE("Scope + Tool", Icons.Default.ViewAgenda),
@@ -52,6 +54,7 @@ fun StudioDockContainer(
     onCreatePresetClick: () -> Unit = {},
     onDeletePreset: (String) -> Unit = {},
     isMaskTracking: Boolean = false,
+    maskTrackingDirection: Int = 1,
     onTrackMaskForward: () -> Unit = {},
     onTrackMaskBackward: () -> Unit = {},
     onTrackMaskStep: () -> Unit = {},
@@ -706,8 +709,12 @@ fun StudioDockContainer(
                         }
 
                         StudioToolTab.CURVES -> {
-                            val curveHistogram = remember(previewBitmap) {
-                                previewBitmap?.let { com.example.color.SamsungLogColorScience.calculateHistogram(it) }
+                            val curveHistogram by produceState<com.example.color.HistogramData?>(initialValue = null, previewBitmap) {
+                                value = previewBitmap?.let { bmp ->
+                                    withContext(Dispatchers.Default) {
+                                        com.example.color.SamsungLogColorScience.calculateHistogram(bmp)
+                                    }
+                                }
                             }
                             // Custom Spline Curves Editor Canvas with Live Histogram Backdrop
                             CurvesEditor(
@@ -783,6 +790,7 @@ fun StudioDockContainer(
                                 hslQualifier = settings.hslQualifier,
                                 onHslQualifierChange = { newHsl -> onSettingsChange("Adjust 3D HSL Qualifier") { it.copy(hslQualifier = newHsl) } },
                                 isTracking = isMaskTracking,
+                                trackingDirection = maskTrackingDirection,
                                 onTrackForward = onTrackMaskForward,
                                 onTrackBackward = onTrackMaskBackward,
                                 onTrackStep = onTrackMaskStep,

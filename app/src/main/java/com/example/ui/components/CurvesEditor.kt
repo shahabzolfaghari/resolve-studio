@@ -550,6 +550,15 @@ fun CurvesEditor(
                         }
                     }
             ) {
+                // P-7: Cache spline lookup table outside Canvas draw lambda
+                val splineLut = remember(currentPoints, editorMode, selectedSecondaryChannel) {
+                    if (editorMode == CurveEditorMode.COLOR_VS_COLOR && selectedSecondaryChannel != SecondaryCurveChannel.LUM_VS_SAT) {
+                        SamsungLogColorScience.buildPeriodicSplineLut(currentPoints)
+                    } else {
+                        SamsungLogColorScience.buildSplineLut(currentPoints)
+                    }
+                }
+
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val w = size.width
                     val h = size.height
@@ -651,8 +660,8 @@ fun CurvesEditor(
                         )
                     }
 
-                    // 3. Render Spline Curve Line & Gradient
-                    val lut = SamsungLogColorScience.buildSplineLut(currentPoints)
+                    // 3. Render Spline Curve Line & Gradient (using cached LUT)
+                    val lut = splineLut
                     val curvePath = Path()
                     curvePath.moveTo(0f, (1f - lut[0]) * h)
                     for (i in 1..255) {

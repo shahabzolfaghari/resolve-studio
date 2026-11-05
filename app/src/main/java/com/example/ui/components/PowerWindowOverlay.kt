@@ -32,6 +32,7 @@ fun PowerWindowControls(
     hslQualifier: HslQualifierSettings = HslQualifierSettings(),
     onHslQualifierChange: (HslQualifierSettings) -> Unit = {},
     isTracking: Boolean = false,
+    trackingDirection: Int = 1,
     onTrackForward: () -> Unit = {},
     onTrackBackward: () -> Unit = {},
     onTrackStep: () -> Unit = {},
@@ -334,15 +335,20 @@ fun PowerWindowControls(
                                 )
                             }
 
-                            // Keyframe & Confidence Readout Badge
+                            // Real keyframe count and measured NCC correlation confidence readout
+                            val avgConfidence = if (mask.trackingKeyframes.isNotEmpty()) {
+                                val avg = mask.trackingKeyframes.map { it.confidence }.average().toFloat()
+                                (avg * 100).toInt().coerceIn(10, 99)
+                            } else 0
+
                             Surface(
                                 color = if (isTracking) Color(0xFF10B981).copy(alpha = 0.22f) else Color(0xFF1A2232),
                                 shape = RoundedCornerShape(4.dp)
                             ) {
                                 Text(
                                     text = when {
-                                        isTracking -> "TRACKING LIVE..."
-                                        mask.trackingKeyframes.isNotEmpty() -> "${mask.trackingKeyframes.size} Keys • 98% Lock"
+                                        isTracking -> if (trackingDirection < 0) "TRACKING REV..." else "TRACKING FWD..."
+                                        mask.trackingKeyframes.isNotEmpty() -> "${mask.trackingKeyframes.size} Keys • $avgConfidence% Lock"
                                         else -> String.format("X:%.2f Y:%.2f", mask.centerX, mask.centerY)
                                     },
                                     color = if (isTracking || mask.trackingKeyframes.isNotEmpty()) Color(0xFF10B981) else ResolveCyan,
@@ -362,13 +368,15 @@ fun PowerWindowControls(
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // Track Backward
+                            // Track Backward / Stop
                             Surface(
                                 onClick = onTrackBackward,
-                                color = Color(0xFF182030),
+                                color = if (isTracking && trackingDirection < 0) Color(0xFF3A1D24) else Color(0xFF182030),
                                 shape = RoundedCornerShape(6.dp),
                                 border = CardDefaults.outlinedCardBorder().copy(
-                                    brush = androidx.compose.ui.graphics.SolidColor(Color(0xFF28344B))
+                                    brush = androidx.compose.ui.graphics.SolidColor(
+                                        if (isTracking && trackingDirection < 0) ResolveRed else Color(0xFF28344B)
+                                    )
                                 ),
                                 modifier = Modifier.weight(1f).testTag("track_mask_reverse_btn")
                             ) {
@@ -377,9 +385,19 @@ fun PowerWindowControls(
                                     horizontalArrangement = Arrangement.Center,
                                     modifier = Modifier.padding(vertical = 5.dp)
                                 ) {
-                                    Icon(Icons.Default.FastRewind, contentDescription = null, tint = ResolveCyan, modifier = Modifier.size(12.dp))
+                                    Icon(
+                                        imageVector = if (isTracking && trackingDirection < 0) Icons.Default.Stop else Icons.Default.FastRewind,
+                                        contentDescription = null,
+                                        tint = if (isTracking && trackingDirection < 0) ResolveRed else ResolveCyan,
+                                        modifier = Modifier.size(12.dp)
+                                    )
                                     Spacer(modifier = Modifier.width(3.dp))
-                                    Text("Track Rev", color = TextPrimary, fontSize = 8.5.sp, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        text = if (isTracking && trackingDirection < 0) "Stop" else "Track Rev",
+                                        color = if (isTracking && trackingDirection < 0) ResolveRed else TextPrimary,
+                                        fontSize = 8.5.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
                             }
 
@@ -407,11 +425,11 @@ fun PowerWindowControls(
                             // Track Forward / Stop
                             Surface(
                                 onClick = onTrackForward,
-                                color = if (isTracking) Color(0xFF3A1D24) else Color(0xFF132F28),
+                                color = if (isTracking && trackingDirection > 0) Color(0xFF3A1D24) else Color(0xFF132F28),
                                 shape = RoundedCornerShape(6.dp),
                                 border = CardDefaults.outlinedCardBorder().copy(
                                     brush = androidx.compose.ui.graphics.SolidColor(
-                                        if (isTracking) ResolveRed else Color(0xFF10B981)
+                                        if (isTracking && trackingDirection > 0) ResolveRed else Color(0xFF10B981)
                                     )
                                 ),
                                 modifier = Modifier.weight(1.25f).testTag("track_mask_forward_btn")
@@ -422,15 +440,15 @@ fun PowerWindowControls(
                                     modifier = Modifier.padding(vertical = 5.dp)
                                 ) {
                                     Icon(
-                                        imageVector = if (isTracking) Icons.Default.Stop else Icons.Default.PlayArrow,
+                                        imageVector = if (isTracking && trackingDirection > 0) Icons.Default.Stop else Icons.Default.PlayArrow,
                                         contentDescription = null,
-                                        tint = if (isTracking) ResolveRed else Color(0xFF10B981),
+                                        tint = if (isTracking && trackingDirection > 0) ResolveRed else Color(0xFF10B981),
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(3.dp))
                                     Text(
-                                        text = if (isTracking) "Stop" else "Track Fwd",
-                                        color = if (isTracking) ResolveRed else Color(0xFF10B981),
+                                        text = if (isTracking && trackingDirection > 0) "Stop" else "Track Fwd",
+                                        color = if (isTracking && trackingDirection > 0) ResolveRed else Color(0xFF10B981),
                                         fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold
                                     )

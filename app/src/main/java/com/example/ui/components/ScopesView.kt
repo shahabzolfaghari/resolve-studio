@@ -20,8 +20,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.color.HistogramData
 import com.example.color.SamsungLogColorScience
+import com.example.color.WaveformData
 import com.example.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -34,6 +38,8 @@ enum class ScopeMode(val title: String) {
 @Composable
 fun ScopesView(
     previewBitmap: Bitmap?,
+    histogramData: HistogramData? = null,
+    waveformData: WaveformData? = null,
     modifier: Modifier = Modifier
 ) {
     var scopeMode by remember { mutableStateOf(ScopeMode.WAVEFORM_PARADE) }
@@ -104,9 +110,9 @@ fun ScopesView(
                     Text("No signal", color = TextMuted, fontSize = 11.sp)
                 } else {
                     when (scopeMode) {
-                        ScopeMode.WAVEFORM_PARADE -> WaveformParadeCanvas(previewBitmap)
+                        ScopeMode.WAVEFORM_PARADE -> WaveformParadeCanvas(previewBitmap, waveformData)
                         ScopeMode.VECTORSCOPE -> VectorscopeCanvas(previewBitmap)
-                        ScopeMode.HISTOGRAM -> HistogramCanvas(previewBitmap)
+                        ScopeMode.HISTOGRAM -> HistogramCanvas(previewBitmap, histogramData)
                     }
                 }
             }
@@ -115,10 +121,13 @@ fun ScopesView(
 }
 
 @Composable
-fun WaveformParadeCanvas(bitmap: Bitmap) {
-    val waveform = remember(bitmap) {
-        SamsungLogColorScience.calculateWaveform(bitmap)
+fun WaveformParadeCanvas(bitmap: Bitmap, precomputedWaveform: WaveformData? = null) {
+    val waveform by produceState(initialValue = precomputedWaveform, bitmap, precomputedWaveform) {
+        value = precomputedWaveform ?: withContext(Dispatchers.Default) {
+            SamsungLogColorScience.calculateWaveform(bitmap)
+        }
     }
+    val activeWaveform = waveform ?: return
 
     Canvas(modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 6.dp)) {
         val w = size.width
@@ -140,9 +149,9 @@ fun WaveformParadeCanvas(bitmap: Bitmap) {
         val gap = 4.dp.toPx()
 
         val grids = listOf(
-            Triple(waveform.redGrid, Color(0xFFEF4444), 0),
-            Triple(waveform.greenGrid, Color(0xFF10B981), 1),
-            Triple(waveform.blueGrid, Color(0xFF3B82F6), 2)
+            Triple(activeWaveform.redGrid, Color(0xFFEF4444), 0),
+            Triple(activeWaveform.greenGrid, Color(0xFF10B981), 1),
+            Triple(activeWaveform.blueGrid, Color(0xFF3B82F6), 2)
         )
 
         for ((grid, color, colIdx) in grids) {
@@ -161,14 +170,14 @@ fun WaveformParadeCanvas(bitmap: Bitmap) {
             }
 
             // Draw density dots/traces
-            val stepCol = (waveform.columns / 3).coerceAtLeast(1)
+            val stepCol = (activeWaveform.columns / 3).coerceAtLeast(1)
             for (x in 0 until stepCol) {
                 val px = startX + (x.toFloat() / stepCol) * subWidth
-                val sampleX = (colIdx * stepCol + x).coerceIn(0, waveform.columns - 1)
-                for (y in 0 until waveform.rows) {
+                val sampleX = (colIdx * stepCol + x).coerceIn(0, activeWaveform.columns - 1)
+                for (y in 0 until activeWaveform.rows) {
                     val density = grid[sampleX][y]
                     if (density > 0f) {
-                        val py = (1f - y.toFloat() / waveform.rows) * h
+                        val py = (1f - y.toFloat() / activeWaveform.rows) * h
                         val alpha = (density * 0.35f).coerceIn(0.2f, 0.85f)
                         drawCircle(
                             color = color.copy(alpha = alpha),
@@ -184,6 +193,32 @@ fun WaveformParadeCanvas(bitmap: Bitmap) {
 
 @Composable
 fun VectorscopeCanvas(bitmap: Bitmap) {
+    // P-6: Extract chrominance coordinates on background coroutine
+    val chromaSamples by produceState<List<Offset>>(initialValue = emptyList(), bitmap) {
+        value = withContext(Dispatchers.Default) {
+            val step = 16
+            val bmpW = bitmap.width
+            val bmpH = bitmap.height
+            val pixels = IntArray(bmpW * bmpH)
+            bitmap.getPixels(pixels, 0, bmpW, 0, 0, bmpW, bmpH)
+            val list = ArrayList<Offset>((bmpW / step) * (bmpH / step))
+            for (y in 0 until bmpH step step) {
+                val row = y * bmpW
+                for (x in 0 until bmpW step step) {
+                    val p = pixels[row + x]
+                    val r = (p shr 16 and 0xFF) / 255f
+                    val g = (p shr 8 and 0xFF) / 255f
+                    val b = (p and 0xFF) / 255f
+
+                    val cb = -0.168736f * r - 0.331264f * g + 0.5f * b
+                    val cr = 0.5f * r - 0.418688f * g - 0.081312f * b
+                    list.add(Offset(cb, cr))
+                }
+            }
+            list
+        }
+    }
+
     Canvas(modifier = Modifier.fillMaxSize().padding(4.dp)) {
         val w = size.width
         val h = size.height
@@ -250,43 +285,27 @@ fun VectorscopeCanvas(bitmap: Bitmap) {
             )
         }
 
-        // Sample bitmap chroma pixels
-        val step = 16
-        val bmpW = bitmap.width
-        val bmpH = bitmap.height
-        val pixels = IntArray(bmpW * bmpH)
-        bitmap.getPixels(pixels, 0, bmpW, 0, 0, bmpW, bmpH)
-
-        for (y in 0 until bmpH step step) {
-            val row = y * bmpW
-            for (x in 0 until bmpW step step) {
-                val p = pixels[row + x]
-                val r = (p shr 16 and 0xFF) / 255f
-                val g = (p shr 8 and 0xFF) / 255f
-                val b = (p and 0xFF) / 255f
-
-                // Cb, Cr chrominance coordinates
-                val cb = -0.168736f * r - 0.331264f * g + 0.5f * b
-                val cr = 0.5f * r - 0.418688f * g - 0.081312f * b
-
-                val px = center.x + cb * radius * 1.8f
-                val py = center.y - cr * radius * 1.8f
-
-                drawCircle(
-                    color = ResolveCyan.copy(alpha = 0.45f),
-                    radius = 1.2.dp.toPx(),
-                    center = Offset(px, py)
-                )
-            }
+        // Draw sampled chroma dots
+        for (sample in chromaSamples) {
+            val px = center.x + sample.x * radius * 1.8f
+            val py = center.y - sample.y * radius * 1.8f
+            drawCircle(
+                color = ResolveCyan.copy(alpha = 0.45f),
+                radius = 1.2.dp.toPx(),
+                center = Offset(px, py)
+            )
         }
     }
 }
 
 @Composable
-fun HistogramCanvas(bitmap: Bitmap) {
-    val histogram = remember(bitmap) {
-        SamsungLogColorScience.calculateHistogram(bitmap)
+fun HistogramCanvas(bitmap: Bitmap, precomputedHistogram: HistogramData? = null) {
+    val histogramState by produceState(initialValue = precomputedHistogram, bitmap, precomputedHistogram) {
+        value = precomputedHistogram ?: withContext(Dispatchers.Default) {
+            SamsungLogColorScience.calculateHistogram(bitmap)
+        }
     }
+    val histogram = histogramState ?: return
 
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 6.dp)) {

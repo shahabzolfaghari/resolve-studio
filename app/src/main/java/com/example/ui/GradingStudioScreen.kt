@@ -61,6 +61,7 @@ fun GradingStudioScreen(
     val activeClipIndex by viewModel.activeClipIndex.collectAsStateWithLifecycle()
     val copiedClipGrade by viewModel.copiedClipGrade.collectAsStateWithLifecycle()
     val isMaskTracking by viewModel.isMaskTracking.collectAsStateWithLifecycle()
+    val maskTrackingDirection by viewModel.maskTrackingDirection.collectAsStateWithLifecycle()
 
     val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
     val canRedo by viewModel.canRedo.collectAsStateWithLifecycle()
@@ -555,6 +556,7 @@ fun GradingStudioScreen(
                                         onCreatePresetClick = { showSavePresetDialog = true },
                                         onDeletePreset = { viewModel.deletePreset(it) },
                                         isMaskTracking = isMaskTracking,
+                                        maskTrackingDirection = maskTrackingDirection,
                                         onTrackMaskForward = { viewModel.toggleTrackMaskForward(1) },
                                         onTrackMaskBackward = { viewModel.toggleTrackMaskForward(-1) },
                                         onTrackMaskStep = { viewModel.stepTrackMask(1) },
@@ -640,6 +642,7 @@ fun GradingStudioScreen(
                                         onCreatePresetClick = { showSavePresetDialog = true },
                                         onDeletePreset = { viewModel.deletePreset(it) },
                                         isMaskTracking = isMaskTracking,
+                                        maskTrackingDirection = maskTrackingDirection,
                                         onTrackMaskForward = { viewModel.toggleTrackMaskForward(1) },
                                         onTrackMaskBackward = { viewModel.toggleTrackMaskForward(-1) },
                                         onTrackMaskStep = { viewModel.stepTrackMask(1) },
@@ -678,10 +681,20 @@ fun GradingStudioScreen(
                             .padding(horizontal = 14.dp, vertical = 6.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            val (toastIcon, iconTint) = when {
+                                toastText.startsWith("Undo") -> Pair(Icons.Default.Undo, ResolveAmber)
+                                toastText.startsWith("Redo") -> Pair(Icons.Default.Redo, ResolveAmber)
+                                toastText.contains("Copied") -> Pair(Icons.Default.ContentCopy, ResolveCyan)
+                                toastText.contains("Paste") -> Pair(Icons.Default.ContentPaste, ResolveCyan)
+                                toastText.contains("Track") -> Pair(Icons.Default.TrackChanges, Color(0xFF10B981))
+                                toastText.contains("LUT") || toastText.contains("Preset") || toastText.contains("Look") -> Pair(Icons.Default.Bookmark, ResolveAmber)
+                                toastText.contains("Reset") -> Pair(Icons.Default.Refresh, ResolveRed)
+                                else -> Pair(Icons.Default.Info, ResolveCyan)
+                            }
                             Icon(
-                                imageVector = if (toastText.startsWith("Undo")) Icons.Default.Undo else Icons.Default.Redo,
+                                imageVector = toastIcon,
                                 contentDescription = null,
-                                tint = ResolveAmber,
+                                tint = iconTint,
                                 modifier = Modifier.size(13.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -729,6 +742,7 @@ fun GradingStudioScreen(
             onCreatePresetClick = { showSavePresetDialog = true },
             onDeletePreset = { viewModel.deletePreset(it) },
             isMaskTracking = isMaskTracking,
+            maskTrackingDirection = maskTrackingDirection,
             onTrackMaskForward = { viewModel.toggleTrackMaskForward(1) },
             onTrackMaskBackward = { viewModel.toggleTrackMaskForward(-1) },
             onTrackMaskStep = { viewModel.stepTrackMask(1) },

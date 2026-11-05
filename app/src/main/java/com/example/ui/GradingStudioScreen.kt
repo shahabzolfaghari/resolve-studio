@@ -60,6 +60,7 @@ fun GradingStudioScreen(
     val timelineClips by viewModel.timelineClips.collectAsStateWithLifecycle()
     val activeClipIndex by viewModel.activeClipIndex.collectAsStateWithLifecycle()
     val copiedClipGrade by viewModel.copiedClipGrade.collectAsStateWithLifecycle()
+    val isMaskTracking by viewModel.isMaskTracking.collectAsStateWithLifecycle()
 
     val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
     val canRedo by viewModel.canRedo.collectAsStateWithLifecycle()
@@ -553,6 +554,11 @@ fun GradingStudioScreen(
                                         onApplyPreset = { viewModel.applyPreset(it) },
                                         onCreatePresetClick = { showSavePresetDialog = true },
                                         onDeletePreset = { viewModel.deletePreset(it) },
+                                        isMaskTracking = isMaskTracking,
+                                        onTrackMaskForward = { viewModel.toggleTrackMaskForward(1) },
+                                        onTrackMaskBackward = { viewModel.toggleTrackMaskForward(-1) },
+                                        onTrackMaskStep = { viewModel.stepTrackMask(1) },
+                                        onClearMaskTrack = { viewModel.clearMaskTrack() },
                                         onCollapseToFloating = { uiStateManager.collapseToFloating() },
                                         showCollapseButton = true,
                                         showInternalTabBar = false,
@@ -633,6 +639,11 @@ fun GradingStudioScreen(
                                         onApplyPreset = { viewModel.applyPreset(it) },
                                         onCreatePresetClick = { showSavePresetDialog = true },
                                         onDeletePreset = { viewModel.deletePreset(it) },
+                                        isMaskTracking = isMaskTracking,
+                                        onTrackMaskForward = { viewModel.toggleTrackMaskForward(1) },
+                                        onTrackMaskBackward = { viewModel.toggleTrackMaskForward(-1) },
+                                        onTrackMaskStep = { viewModel.stepTrackMask(1) },
+                                        onClearMaskTrack = { viewModel.clearMaskTrack() },
                                         onCollapseToFloating = { uiStateManager.collapseToFloating() },
                                         showCollapseButton = true,
                                         showInternalTabBar = false,
@@ -717,6 +728,11 @@ fun GradingStudioScreen(
             onApplyPreset = { viewModel.applyPreset(it) },
             onCreatePresetClick = { showSavePresetDialog = true },
             onDeletePreset = { viewModel.deletePreset(it) },
+            isMaskTracking = isMaskTracking,
+            onTrackMaskForward = { viewModel.toggleTrackMaskForward(1) },
+            onTrackMaskBackward = { viewModel.toggleTrackMaskForward(-1) },
+            onTrackMaskStep = { viewModel.stepTrackMask(1) },
+            onClearMaskTrack = { viewModel.clearMaskTrack() },
             onExpandToStaticDock = {
                 uiStateManager.expandToDocked()
                 uiStateManager.closeToolSheet()

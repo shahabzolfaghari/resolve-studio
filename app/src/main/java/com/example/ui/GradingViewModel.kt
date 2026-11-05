@@ -109,6 +109,10 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
     private val _historyActionToast = MutableStateFlow<String?>(null)
     val historyActionToast = _historyActionToast.asStateFlow()
 
+    private val _isMaskTracking = MutableStateFlow(false)
+    val isMaskTracking = _isMaskTracking.asStateFlow()
+    private var trackerJob: Job? = null
+
     private var historyDebounceJob: Job? = null
     private var pendingActionDescription: String = "Color Grade Change"
 
@@ -482,6 +486,104 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
         updateFrameForTime(newTime)
     }
 
+    // =========================================================================
+    // DAVINCI RESOLVE POWER WINDOW CLOUD MOTION TRACKER
+    // =========================================================================
+
+    fun stepTrackMask(direction: Int = 1) {
+        val frameMs = 33L
+        val newTime = (_currentTimeMs.value + direction * frameMs).coerceIn(0L, _totalDurationMs.value)
+        _currentTimeMs.value = newTime
+        updateFrameForTime(newTime)
+
+        val raw = _rawFrameBitmap.value ?: return
+        val currentMask = _gradeSettings.value.mask
+        if (currentMask.type == MaskType.NONE) return
+
+        val frameIndex = (newTime / 33L).toInt()
+        val (trackedCx, trackedCy) = SamsungLogColorScience.computeTrackedCenter(
+            bitmap = raw,
+            centerX = currentMask.centerX,
+            centerY = currentMask.centerY,
+            radiusX = currentMask.radiusX,
+            radiusY = currentMask.radiusY,
+            frameIndex = frameIndex
+        )
+
+        val dx = trackedCx - currentMask.centerX
+        val dy = trackedCy - currentMask.centerY
+        val updatedBezier = if (currentMask.type == MaskType.CUSTOM_BEZIER) {
+            currentMask.bezierPoints.map { pt ->
+                pt.copy(
+                    x = (pt.x + dx).coerceIn(0.02f, 0.98f),
+                    y = (pt.y + dy).coerceIn(0.02f, 0.98f),
+                    handleInX = (pt.handleInX + dx).coerceIn(0.02f, 0.98f),
+                    handleInY = (pt.handleInY + dy).coerceIn(0.02f, 0.98f),
+                    handleOutX = (pt.handleOutX + dx).coerceIn(0.02f, 0.98f),
+                    handleOutY = (pt.handleOutY + dy).coerceIn(0.02f, 0.98f)
+                )
+            }
+        } else {
+            currentMask.bezierPoints
+        }
+
+        val updatedKeyframes = (currentMask.trackingKeyframes.filterNot { kotlin.math.abs(it.timeMs - newTime) < 16L } +
+            MaskTrackerKeyframe(timeMs = newTime, centerX = trackedCx, centerY = trackedCy, confidence = 0.98f))
+            .sortedBy { it.timeMs }
+            .takeLast(90)
+
+        val updatedMask = currentMask.copy(
+            centerX = trackedCx,
+            centerY = trackedCy,
+            bezierPoints = updatedBezier,
+            trackingEnabled = true,
+            trackPointLocked = true,
+            trackingKeyframes = updatedKeyframes
+        )
+        _gradeSettings.value = _gradeSettings.value.copy(mask = updatedMask)
+        syncActiveClipSettings(_gradeSettings.value)
+        triggerGrade()
+    }
+
+    fun toggleTrackMaskForward(direction: Int = 1) {
+        if (_isMaskTracking.value) {
+            _isMaskTracking.value = false
+            trackerJob?.cancel()
+            commitSnapshot("Track Power Window (${_gradeSettings.value.mask.trackingKeyframes.size} Keyframes)")
+            _historyActionToast.value = "Tracker locked ${_gradeSettings.value.mask.trackingKeyframes.size} keyframes"
+            return
+        }
+
+        _isMaskTracking.value = true
+        trackerJob?.cancel()
+        trackerJob = viewModelScope.launch(Dispatchers.Default) {
+            var steps = 0
+            while (isActive && _isMaskTracking.value && steps < 36) {
+                stepTrackMask(direction)
+                steps++
+                delay(42L)
+            }
+            _isMaskTracking.value = false
+            commitSnapshot("Track Power Window (${_gradeSettings.value.mask.trackingKeyframes.size} Keyframes)")
+            _historyActionToast.value = "Tracked ${_gradeSettings.value.mask.trackingKeyframes.size} frames"
+        }
+    }
+
+    fun clearMaskTrack() {
+        _isMaskTracking.value = false
+        trackerJob?.cancel()
+        updateSettings(description = "Clear Window Track", immediateCommit = true) {
+            it.copy(
+                mask = it.mask.copy(
+                    trackingEnabled = false,
+                    trackPointLocked = false,
+                    trackingKeyframes = emptyList()
+                )
+            )
+        }
+        _historyActionToast.value = "Cleared Power Window track keyframes"
+    }
+
     private fun startPlaybackLoop() {
         playbackJob?.cancel()
         playbackJob = viewModelScope.launch(Dispatchers.Default) {
@@ -560,7 +662,36 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
             val frameIndex = (localTimeMs / 33L).toInt()
             val raw = SampleMediaGenerator.generateLogFrame(_currentScene.value, frameIndex = frameIndex)
             _rawFrameBitmap.value = raw
+            applyTrackedKeyframeIfPresent(timeMs)
             triggerGrade()
+        }
+    }
+
+    private fun applyTrackedKeyframeIfPresent(timeMs: Long) {
+        if (_isMaskTracking.value) return
+        val currentMask = _gradeSettings.value.mask
+        val kfs = currentMask.trackingKeyframes
+        if (kfs.isEmpty()) return
+
+        val before = kfs.lastOrNull { it.timeMs <= timeMs }
+        val after = kfs.firstOrNull { it.timeMs >= timeMs }
+        val (interpX, interpY) = when {
+            before != null && after != null && before.timeMs != after.timeMs -> {
+                val t = ((timeMs - before.timeMs).toFloat() / (after.timeMs - before.timeMs).toFloat()).coerceIn(0f, 1f)
+                Pair(
+                    before.centerX + (after.centerX - before.centerX) * t,
+                    before.centerY + (after.centerY - before.centerY) * t
+                )
+            }
+            before != null -> Pair(before.centerX, before.centerY)
+            after != null -> Pair(after.centerX, after.centerY)
+            else -> return
+        }
+
+        if (kotlin.math.abs(interpX - currentMask.centerX) > 0.001f || kotlin.math.abs(interpY - currentMask.centerY) > 0.001f) {
+            _gradeSettings.value = _gradeSettings.value.copy(
+                mask = currentMask.copy(centerX = interpX, centerY = interpY)
+            )
         }
     }
 

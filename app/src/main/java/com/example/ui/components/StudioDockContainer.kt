@@ -51,6 +51,11 @@ fun StudioDockContainer(
     onApplyPreset: (GradePreset) -> Unit = {},
     onCreatePresetClick: () -> Unit = {},
     onDeletePreset: (String) -> Unit = {},
+    isMaskTracking: Boolean = false,
+    onTrackMaskForward: () -> Unit = {},
+    onTrackMaskBackward: () -> Unit = {},
+    onTrackMaskStep: () -> Unit = {},
+    onClearMaskTrack: () -> Unit = {},
     onCollapseToFloating: () -> Unit = {},
     showCollapseButton: Boolean = true,
     showInternalTabBar: Boolean = false,
@@ -61,6 +66,7 @@ fun StudioDockContainer(
     var monitorMode by remember { mutableStateOf(DockMonitorMode.FULL_TOOL) }
     var activeScopeMode by remember { mutableStateOf(ScopeMode.VECTORSCOPE) }
     var useGridWheels by remember { mutableStateOf(true) }
+    var useLogWheels by remember { mutableStateOf(false) }
 
     // Synchronize external showScopes toggle with internal DockMonitorMode
     LaunchedEffect(showScopesExternal) {
@@ -309,7 +315,7 @@ fun StudioDockContainer(
                 Column(modifier = Modifier.fillMaxWidth()) {
                     when (activeTab) {
                         StudioToolTab.WHEELS -> {
-                            // Primary Color Wheels Deck
+                            // Primary & Log Zone Color Wheels Deck
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Row(
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -318,20 +324,44 @@ fun StudioDockContainer(
                                         .fillMaxWidth()
                                         .padding(horizontal = 4.dp, vertical = 2.dp)
                                 ) {
-                                    Column {
-                                        Text(
-                                            text = "3-WAY COLOR WHEELS & OFFSET",
-                                            color = TextPrimary,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 0.5.sp
-                                        )
-                                        Text(
-                                            text = "Lift • Gamma • Gain • Offset",
-                                            color = TextMuted,
-                                            fontSize = 8.sp,
-                                            fontFamily = FontFamily.Monospace
-                                        )
+                                    // Mode Switcher: [PRIMARIES] vs [LOG WHEELS]
+                                    Row(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(Color(0xFF0E121A))
+                                            .border(1.dp, StudioCardBorder, RoundedCornerShape(6.dp))
+                                            .padding(1.5.dp)
+                                    ) {
+                                        Surface(
+                                            onClick = { useLogWheels = false },
+                                            color = if (!useLogWheels) ResolveAmber.copy(alpha = 0.22f) else Color.Transparent,
+                                            shape = RoundedCornerShape(4.dp),
+                                            modifier = Modifier.testTag("wheels_mode_primaries")
+                                        ) {
+                                            Text(
+                                                text = "PRIMARIES",
+                                                color = if (!useLogWheels) ResolveAmber else TextSecondary,
+                                                fontSize = 8.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = FontFamily.Monospace,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                            )
+                                        }
+                                        Surface(
+                                            onClick = { useLogWheels = true },
+                                            color = if (useLogWheels) ResolveCyan.copy(alpha = 0.22f) else Color.Transparent,
+                                            shape = RoundedCornerShape(4.dp),
+                                            modifier = Modifier.testTag("wheels_mode_log")
+                                        ) {
+                                            Text(
+                                                text = "LOG WHEELS",
+                                                color = if (useLogWheels) ResolveCyan else TextSecondary,
+                                                fontSize = 8.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = FontFamily.Monospace,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                            )
+                                        }
                                     }
 
                                     // Layout Switcher: 2x2 Grid (No Scroll Conflict) vs 4x1 Strip
@@ -376,85 +406,291 @@ fun StudioDockContainer(
 
                                 Spacer(modifier = Modifier.height(2.dp))
 
-                                if (useGridWheels) {
-                                    // 2x2 Ergonomic Grid: All 4 wheels visible simultaneously without horizontal scroll conflicts
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        Row(modifier = Modifier.fillMaxWidth()) {
+                                if (!useLogWheels) {
+                                    // =========================================================
+                                    // STANDARD DAVINCI RESOLVE PRIMARY WHEELS (LIFT/GAMMA/GAIN)
+                                    // =========================================================
+                                    if (useGridWheels) {
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            Row(modifier = Modifier.fillMaxWidth()) {
+                                                ColorWheel(
+                                                    title = "Lift",
+                                                    accentColor = WheelLiftColor,
+                                                    value = settings.lift,
+                                                    onValueChange = { newLift -> onSettingsChange("Adjust Lift (Shadows)") { it.copy(lift = newLift) } },
+                                                    wheelDiameter = 112.dp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                ColorWheel(
+                                                    title = "Gamma",
+                                                    accentColor = WheelGammaColor,
+                                                    value = settings.gamma,
+                                                    onValueChange = { newGamma -> onSettingsChange("Adjust Gamma (Midtones)") { it.copy(gamma = newGamma) } },
+                                                    wheelDiameter = 112.dp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                            }
+                                            Row(modifier = Modifier.fillMaxWidth()) {
+                                                ColorWheel(
+                                                    title = "Gain",
+                                                    accentColor = WheelGainColor,
+                                                    value = settings.gain,
+                                                    onValueChange = { newGain -> onSettingsChange("Adjust Gain (Highlights)") { it.copy(gain = newGain) } },
+                                                    wheelDiameter = 112.dp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                ColorWheel(
+                                                    title = "Offset",
+                                                    accentColor = WheelOffsetColor,
+                                                    value = settings.offset,
+                                                    onValueChange = { newOffset -> onSettingsChange("Adjust Offset") { it.copy(offset = newOffset) } },
+                                                    wheelDiameter = 112.dp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(rememberScrollState())
+                                                .padding(vertical = 2.dp)
+                                        ) {
                                             ColorWheel(
                                                 title = "Lift",
                                                 accentColor = WheelLiftColor,
                                                 value = settings.lift,
                                                 onValueChange = { newLift -> onSettingsChange("Adjust Lift (Shadows)") { it.copy(lift = newLift) } },
-                                                wheelDiameter = 112.dp,
-                                                modifier = Modifier.weight(1f)
+                                                modifier = Modifier.width(155.dp)
                                             )
+
                                             ColorWheel(
                                                 title = "Gamma",
                                                 accentColor = WheelGammaColor,
                                                 value = settings.gamma,
                                                 onValueChange = { newGamma -> onSettingsChange("Adjust Gamma (Midtones)") { it.copy(gamma = newGamma) } },
-                                                wheelDiameter = 112.dp,
-                                                modifier = Modifier.weight(1f)
+                                                modifier = Modifier.width(155.dp)
                                             )
-                                        }
-                                        Row(modifier = Modifier.fillMaxWidth()) {
+
                                             ColorWheel(
                                                 title = "Gain",
                                                 accentColor = WheelGainColor,
                                                 value = settings.gain,
                                                 onValueChange = { newGain -> onSettingsChange("Adjust Gain (Highlights)") { it.copy(gain = newGain) } },
-                                                wheelDiameter = 112.dp,
-                                                modifier = Modifier.weight(1f)
+                                                modifier = Modifier.width(155.dp)
                                             )
+
                                             ColorWheel(
                                                 title = "Offset",
                                                 accentColor = WheelOffsetColor,
                                                 value = settings.offset,
                                                 onValueChange = { newOffset -> onSettingsChange("Adjust Offset") { it.copy(offset = newOffset) } },
-                                                wheelDiameter = 112.dp,
-                                                modifier = Modifier.weight(1f)
+                                                modifier = Modifier.width(155.dp)
                                             )
                                         }
                                     }
                                 } else {
-                                    // Horizontal scrolling row of the 4 color wheels
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState())
-                                            .padding(vertical = 2.dp)
+                                    // =========================================================
+                                    // DAVINCI RESOLVE LOG ZONE WHEELS (SHADOW / MIDTONE / HIGHLIGHT)
+                                    // =========================================================
+                                    val log = settings.logWheels
+                                    if (useGridWheels) {
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            Row(modifier = Modifier.fillMaxWidth()) {
+                                                ColorWheel(
+                                                    title = "Shadow",
+                                                    accentColor = Color(0xFF38BDF8),
+                                                    value = log.shadow,
+                                                    onValueChange = { newShadow ->
+                                                        onSettingsChange("Adjust Log Shadow") {
+                                                            it.copy(logWheels = it.logWheels.copy(shadow = newShadow))
+                                                        }
+                                                    },
+                                                    wheelDiameter = 112.dp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                ColorWheel(
+                                                    title = "Midtone",
+                                                    accentColor = ResolveAmber,
+                                                    value = log.midtone,
+                                                    onValueChange = { newMid ->
+                                                        onSettingsChange("Adjust Log Midtone") {
+                                                            it.copy(logWheels = it.logWheels.copy(midtone = newMid))
+                                                        }
+                                                    },
+                                                    wheelDiameter = 112.dp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                            }
+                                            Row(modifier = Modifier.fillMaxWidth()) {
+                                                ColorWheel(
+                                                    title = "Highlight",
+                                                    accentColor = Color(0xFFFACC15),
+                                                    value = log.highlight,
+                                                    onValueChange = { newHi ->
+                                                        onSettingsChange("Adjust Log Highlight") {
+                                                            it.copy(logWheels = it.logWheels.copy(highlight = newHi))
+                                                        }
+                                                    },
+                                                    wheelDiameter = 112.dp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                ColorWheel(
+                                                    title = "Log Offset",
+                                                    accentColor = Color(0xFFA78BFA),
+                                                    value = log.offset,
+                                                    onValueChange = { newOff ->
+                                                        onSettingsChange("Adjust Log Offset") {
+                                                            it.copy(logWheels = it.logWheels.copy(offset = newOff))
+                                                        }
+                                                    },
+                                                    wheelDiameter = 112.dp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(rememberScrollState())
+                                                .padding(vertical = 2.dp)
+                                        ) {
+                                            ColorWheel(
+                                                title = "Shadow",
+                                                accentColor = Color(0xFF38BDF8),
+                                                value = log.shadow,
+                                                onValueChange = { newShadow ->
+                                                    onSettingsChange("Adjust Log Shadow") {
+                                                        it.copy(logWheels = it.logWheels.copy(shadow = newShadow))
+                                                    }
+                                                },
+                                                modifier = Modifier.width(155.dp)
+                                            )
+                                            ColorWheel(
+                                                title = "Midtone",
+                                                accentColor = ResolveAmber,
+                                                value = log.midtone,
+                                                onValueChange = { newMid ->
+                                                    onSettingsChange("Adjust Log Midtone") {
+                                                        it.copy(logWheels = it.logWheels.copy(midtone = newMid))
+                                                    }
+                                                },
+                                                modifier = Modifier.width(155.dp)
+                                            )
+                                            ColorWheel(
+                                                title = "Highlight",
+                                                accentColor = Color(0xFFFACC15),
+                                                value = log.highlight,
+                                                onValueChange = { newHi ->
+                                                    onSettingsChange("Adjust Log Highlight") {
+                                                        it.copy(logWheels = it.logWheels.copy(highlight = newHi))
+                                                    }
+                                                },
+                                                modifier = Modifier.width(155.dp)
+                                            )
+                                            ColorWheel(
+                                                title = "Log Offset",
+                                                accentColor = Color(0xFFA78BFA),
+                                                value = log.offset,
+                                                onValueChange = { newOff ->
+                                                    onSettingsChange("Adjust Log Offset") {
+                                                        it.copy(logWheels = it.logWheels.copy(offset = newOff))
+                                                    }
+                                                },
+                                                modifier = Modifier.width(155.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    // Log Zone Crossover Range Controls (Low Range & High Range)
+                                    Surface(
+                                        color = Color(0xFF10141E),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = CardDefaults.outlinedCardBorder().copy(
+                                            brush = androidx.compose.ui.graphics.SolidColor(StudioCardBorder)
+                                        ),
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                                     ) {
-                                        ColorWheel(
-                                            title = "Lift",
-                                            accentColor = WheelLiftColor,
-                                            value = settings.lift,
-                                            onValueChange = { newLift -> onSettingsChange("Adjust Lift (Shadows)") { it.copy(lift = newLift) } },
-                                            modifier = Modifier.width(155.dp)
-                                        )
+                                        Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text(
+                                                    text = "LOG TONAL RANGE CROSSOVERS",
+                                                    color = ResolveCyan,
+                                                    fontSize = 8.5.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontFamily = FontFamily.Monospace
+                                                )
+                                                Surface(
+                                                    onClick = {
+                                                        onSettingsChange("Reset Log Zone Wheels") {
+                                                            it.copy(logWheels = LogWheelSettings())
+                                                        }
+                                                    },
+                                                    color = Color(0xFF1A2232),
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    modifier = Modifier.testTag("reset_log_wheels_btn")
+                                                ) {
+                                                    Text(
+                                                        text = "Reset Log",
+                                                        color = TextSecondary,
+                                                        fontSize = 8.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
 
-                                        ColorWheel(
-                                            title = "Gamma",
-                                            accentColor = WheelGammaColor,
-                                            value = settings.gamma,
-                                            onValueChange = { newGamma -> onSettingsChange("Adjust Gamma (Midtones)") { it.copy(gamma = newGamma) } },
-                                            modifier = Modifier.width(155.dp)
-                                        )
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                                Text("Low Range", color = TextSecondary, fontSize = 9.sp, modifier = Modifier.width(62.dp))
+                                                Slider(
+                                                    value = log.lowRange,
+                                                    onValueChange = { v ->
+                                                        onSettingsChange("Adjust Log Low Range") {
+                                                            it.copy(logWheels = it.logWheels.copy(lowRange = v.coerceAtMost(it.logWheels.highRange - 0.08f)))
+                                                        }
+                                                    },
+                                                    valueRange = 0.10f..0.55f,
+                                                    colors = SliderDefaults.colors(thumbColor = Color(0xFF38BDF8), activeTrackColor = Color(0xFF38BDF8)),
+                                                    modifier = Modifier.weight(1f).height(24.dp).testTag("log_low_range_slider")
+                                                )
+                                                Text(
+                                                    text = "${(log.lowRange * 100).toInt()}% IRE",
+                                                    color = Color(0xFF38BDF8),
+                                                    fontSize = 8.5.sp,
+                                                    fontFamily = FontFamily.Monospace,
+                                                    modifier = Modifier.width(46.dp)
+                                                )
+                                            }
 
-                                        ColorWheel(
-                                            title = "Gain",
-                                            accentColor = WheelGainColor,
-                                            value = settings.gain,
-                                            onValueChange = { newGain -> onSettingsChange("Adjust Gain (Highlights)") { it.copy(gain = newGain) } },
-                                            modifier = Modifier.width(155.dp)
-                                        )
-
-                                        ColorWheel(
-                                            title = "Offset",
-                                            accentColor = WheelOffsetColor,
-                                            value = settings.offset,
-                                            onValueChange = { newOffset -> onSettingsChange("Adjust Offset") { it.copy(offset = newOffset) } },
-                                            modifier = Modifier.width(155.dp)
-                                        )
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                                Text("High Range", color = TextSecondary, fontSize = 9.sp, modifier = Modifier.width(62.dp))
+                                                Slider(
+                                                    value = log.highRange,
+                                                    onValueChange = { v ->
+                                                        onSettingsChange("Adjust Log High Range") {
+                                                            it.copy(logWheels = it.logWheels.copy(highRange = v.coerceAtLeast(it.logWheels.lowRange + 0.08f)))
+                                                        }
+                                                    },
+                                                    valueRange = 0.45f..0.90f,
+                                                    colors = SliderDefaults.colors(thumbColor = Color(0xFFFACC15), activeTrackColor = Color(0xFFFACC15)),
+                                                    modifier = Modifier.weight(1f).height(24.dp).testTag("log_high_range_slider")
+                                                )
+                                                Text(
+                                                    text = "${(log.highRange * 100).toInt()}% IRE",
+                                                    color = Color(0xFFFACC15),
+                                                    fontSize = 8.5.sp,
+                                                    fontFamily = FontFamily.Monospace,
+                                                    modifier = Modifier.width(46.dp)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
 
@@ -540,12 +776,17 @@ fun StudioDockContainer(
                         }
 
                         StudioToolTab.MASK -> {
-                            // Power Window Masking + 3D HSL Secondary Qualifier Controls
+                            // Power Window Masking + Tracker + 3D HSL Secondary Qualifier Controls
                             PowerWindowControls(
                                 mask = settings.mask,
                                 onMaskChange = { newMask -> onSettingsChange("Adjust Power Window") { it.copy(mask = newMask) } },
                                 hslQualifier = settings.hslQualifier,
                                 onHslQualifierChange = { newHsl -> onSettingsChange("Adjust 3D HSL Qualifier") { it.copy(hslQualifier = newHsl) } },
+                                isTracking = isMaskTracking,
+                                onTrackForward = onTrackMaskForward,
+                                onTrackBackward = onTrackMaskBackward,
+                                onTrackStep = onTrackMaskStep,
+                                onClearTrack = onClearMaskTrack,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

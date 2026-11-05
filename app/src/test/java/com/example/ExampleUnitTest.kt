@@ -553,4 +553,47 @@ class ExampleUnitTest {
         val skyWeight = SamsungLogColorScience.evaluateHslKeyWeight(0.20f, 0.55f, 0.88f, skinKey)
         assertEquals(0f, skyWeight, 0.01f)
     }
+
+    @Test
+    fun testTrianglePowerWindowMask() {
+        val triMask = PowerWindowMask(
+            type = MaskType.TRIANGLE,
+            centerX = 0.5f,
+            centerY = 0.5f,
+            radiusX = 0.30f,
+            radiusY = 0.30f,
+            feather = 0.15f
+        )
+        // Center of triangle (0.5, 0.5) should have full mask weight (1.0)
+        val centerWeight = SamsungLogColorScience.evaluateMask(0.5f, 0.5f, triMask)
+        assertEquals(1.0f, centerWeight, 0.01f)
+
+        // Far top-left corner (0.05, 0.05) is well outside the triangle and should be 0.0
+        val cornerWeight = SamsungLogColorScience.evaluateMask(0.05f, 0.05f, triMask)
+        assertEquals(0.0f, cornerWeight, 0.01f)
+    }
+
+    @Test
+    fun testLogZoneWheelsAndSecondaryCurves() {
+        val settings = ColorGradeSettings()
+        assertEquals(0.33f, settings.logWheels.lowRange, 0.001f)
+        assertEquals(0.68f, settings.logWheels.highRange, 0.001f)
+
+        // Default secondary curves (hueVsHue, hueVsSat, hueVsLum, lumVsSat) are flat at y = 0.5
+        val hueSatLut = SamsungLogColorScience.buildSplineLut(settings.curves.hueVsSat)
+        assertEquals(0.5f, hueSatLut[128], 0.001f)
+
+        // Boosting Hue vs Sat around Cyan (x=0.5, y=0.8) should raise the LUT at index 128 above 0.7
+        val boostedCurves = settings.curves.copy(
+            hueVsSat = listOf(
+                CurvePoint(0f, 0.5f),
+                CurvePoint(0.35f, 0.5f),
+                CurvePoint(0.50f, 0.85f),
+                CurvePoint(0.65f, 0.5f),
+                CurvePoint(1f, 0.5f)
+            )
+        )
+        val boostedLut = SamsungLogColorScience.buildSplineLut(boostedCurves.hueVsSat)
+        assertTrue("Boosted Hue vs Sat curve should exceed 0.75 at Cyan midpoint", boostedLut[128] > 0.75f)
+    }
 }

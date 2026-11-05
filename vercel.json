@@ -2,6 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "buildCommand": "mkdir -p dist/public/screenshots dist/screenshots && cp index.html dist/ && cp index.html public/ && cp -r public/screenshots/* dist/public/screenshots/ && cp -r public/screenshots/* dist/screenshots/ || true",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/public/screenshots/:file*",

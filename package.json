@@ -1,0 +1,10 @@
+{
+  "name": "resolve-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ResolveStudio — 10-Bit Log Color Grading Architecture for Galaxy S24 Ultra",
+  "scripts": {
+    "build": "mkdir -p dist/public/screenshots dist/screenshots && cp index.html dist/ && cp index.html public/ && cp -r public/screenshots/* dist/public/screenshots/ && cp -r public/screenshots/* dist/screenshots/ && cp -r public/assets dist/public/ 2>/dev/null || true",
+    "dev": "python3 -m http.server 8080"
+  }
+}

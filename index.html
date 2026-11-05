@@ -1914,10 +1914,14 @@
             }
           });
         },
-        { threshold: 0.14, rootMargin: '0px 0px -40px 0px' }
+        { threshold: 0.05, rootMargin: '120px 0px 120px 0px' }
       );
 
-      revealEls.forEach((el) => observer.observe(el));
+      revealEls.forEach((el, idx) => {
+        observer.observe(el);
+        // Fallback staggered reveal so full-page captures and deep anchor jumps never leave sections hidden
+        setTimeout(() => el.classList.add('in-view'), 350 + idx * 90);
+      });
 
       // Count-up animation for giant spec numerals
       const countObserver = new IntersectionObserver(

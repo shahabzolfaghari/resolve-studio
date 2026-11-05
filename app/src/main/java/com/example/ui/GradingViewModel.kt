@@ -111,7 +111,19 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
 
     private val _isMaskTracking = MutableStateFlow(false)
     val isMaskTracking = _isMaskTracking.asStateFlow()
+
+    private val _maskTrackingDirection = MutableStateFlow(1)
+    val maskTrackingDirection = _maskTrackingDirection.asStateFlow()
+
+    private val _histogramData = MutableStateFlow<com.example.color.HistogramData?>(null)
+    val histogramData = _histogramData.asStateFlow()
+
+    private val _waveformData = MutableStateFlow<com.example.color.WaveformData?>(null)
+    val waveformData = _waveformData.asStateFlow()
+
     private var trackerJob: Job? = null
+    private var previousTrackFrame: Bitmap? = null
+    private var proxyBitmap: Bitmap? = null
 
     private var historyDebounceJob: Job? = null
     private var pendingActionDescription: String = "Color Grade Change"
@@ -494,21 +506,44 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
         val frameMs = 33L
         val newTime = (_currentTimeMs.value + direction * frameMs).coerceIn(0L, _totalDurationMs.value)
         _currentTimeMs.value = newTime
-        updateFrameForTime(newTime)
 
-        val raw = _rawFrameBitmap.value ?: return
+        // B-2: Ensure the frame is extracted before tracking (synchronous extraction for imported video)
+        val raw = if (importedVideoUri != null) {
+            val (_, localTime) = resolveClipAndTime(newTime)
+            val extracted = synchronized(retrieverLock) {
+                val r = cachedRetriever ?: MediaMetadataRetriever().also {
+                    it.setDataSource(getApplication(), importedVideoUri)
+                    cachedRetriever = it
+                }
+                r.getFrameAtTime(localTime * 1000L, MediaMetadataRetriever.OPTION_CLOSEST)
+            }
+            if (extracted != null) {
+                _rawFrameBitmap.value = extracted
+                extracted
+            } else {
+                _rawFrameBitmap.value
+            }
+        } else {
+            updateFrameForTime(newTime)
+            _rawFrameBitmap.value
+        } ?: return
+
         val currentMask = _gradeSettings.value.mask
         if (currentMask.type == MaskType.NONE) return
 
-        val frameIndex = (newTime / 33L).toInt()
-        val (trackedCx, trackedCy) = SamsungLogColorScience.computeTrackedCenter(
-            bitmap = raw,
+        // B-1: Real Normalized Cross-Correlation (NCC) template matching
+        val trackResult = SamsungLogColorScience.trackMaskPattern(
+            previousBitmap = previousTrackFrame,
+            currentBitmap = raw,
             centerX = currentMask.centerX,
             centerY = currentMask.centerY,
             radiusX = currentMask.radiusX,
-            radiusY = currentMask.radiusY,
-            frameIndex = frameIndex
+            radiusY = currentMask.radiusY
         )
+        previousTrackFrame = raw
+        val trackedCx = trackResult.centerX
+        val trackedCy = trackResult.centerY
+        val realConfidence = trackResult.confidence
 
         val dx = trackedCx - currentMask.centerX
         val dy = trackedCy - currentMask.centerY
@@ -528,7 +563,7 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
         }
 
         val updatedKeyframes = (currentMask.trackingKeyframes.filterNot { kotlin.math.abs(it.timeMs - newTime) < 16L } +
-            MaskTrackerKeyframe(timeMs = newTime, centerX = trackedCx, centerY = trackedCy, confidence = 0.98f))
+            MaskTrackerKeyframe(timeMs = newTime, centerX = trackedCx, centerY = trackedCy, confidence = realConfidence))
             .sortedBy { it.timeMs }
             .takeLast(90)
 
@@ -549,11 +584,13 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
         if (_isMaskTracking.value) {
             _isMaskTracking.value = false
             trackerJob?.cancel()
+            previousTrackFrame = null
             commitSnapshot("Track Power Window (${_gradeSettings.value.mask.trackingKeyframes.size} Keyframes)")
             _historyActionToast.value = "Tracker locked ${_gradeSettings.value.mask.trackingKeyframes.size} keyframes"
             return
         }
 
+        _maskTrackingDirection.value = direction
         _isMaskTracking.value = true
         trackerJob?.cancel()
         trackerJob = viewModelScope.launch(Dispatchers.Default) {
@@ -564,6 +601,7 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
                 delay(42L)
             }
             _isMaskTracking.value = false
+            previousTrackFrame = null
             commitSnapshot("Track Power Window (${_gradeSettings.value.mask.trackingKeyframes.size} Keyframes)")
             _historyActionToast.value = "Tracked ${_gradeSettings.value.mask.trackingKeyframes.size} frames"
         }
@@ -571,6 +609,7 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
 
     fun clearMaskTrack() {
         _isMaskTracking.value = false
+        previousTrackFrame = null
         trackerJob?.cancel()
         updateSettings(description = "Clear Window Track", immediateCommit = true) {
             it.copy(
@@ -600,7 +639,7 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private fun updateFrameForTime(timeMs: Long) {
+    private fun resolveClipAndTime(timeMs: Long): Pair<Int, Long> {
         val clips = _timelineClips.value
         var accumulatedMs = 0L
         var resolvedIndex = _activeClipIndex.value.coerceIn(0, (clips.size - 1).coerceAtLeast(0))
@@ -616,26 +655,32 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
                 }
                 accumulatedMs += clipDur
             }
+        }
+        return Pair(resolvedIndex, localTimeMs)
+    }
 
-            if (resolvedIndex != _activeClipIndex.value) {
-                syncActiveClipSettings(_gradeSettings.value)
-                _activeClipIndex.value = resolvedIndex
-                val nextClip = clips[resolvedIndex]
-                _gradeSettings.value = nextClip.settings
-                if (nextClip.importedUriString != null) {
-                    val nextUri = Uri.parse(nextClip.importedUriString)
-                    if (importedVideoUri != nextUri) {
-                        importedVideoUri = nextUri
-                        releaseCachedRetriever()
-                    }
-                } else {
-                    importedVideoUri = null
+    private fun updateFrameForTime(timeMs: Long) {
+        val (resolvedIndex, localTimeMs) = resolveClipAndTime(timeMs)
+        val clips = _timelineClips.value
+
+        if (clips.isNotEmpty() && resolvedIndex != _activeClipIndex.value) {
+            syncActiveClipSettings(_gradeSettings.value)
+            _activeClipIndex.value = resolvedIndex
+            val nextClip = clips[resolvedIndex]
+            _gradeSettings.value = nextClip.settings
+            if (nextClip.importedUriString != null) {
+                val nextUri = Uri.parse(nextClip.importedUriString)
+                if (importedVideoUri != nextUri) {
+                    importedVideoUri = nextUri
                     releaseCachedRetriever()
-                    _currentScene.value = try {
-                        SampleScene.valueOf(nextClip.sceneName)
-                    } catch (_: Exception) {
-                        SampleScene.S24_LOG_SUNSET_PORTRAIT
-                    }
+                }
+            } else {
+                importedVideoUri = null
+                releaseCachedRetriever()
+                _currentScene.value = try {
+                    SampleScene.valueOf(nextClip.sceneName)
+                } catch (_: Exception) {
+                    SampleScene.S24_LOG_SUNSET_PORTRAIT
                 }
             }
         }
@@ -653,6 +698,8 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
                     }
                     if (frame != null) {
                         _rawFrameBitmap.value = frame
+                        // B-3: Apply tracked keyframes for imported video as well as sample scenes
+                        applyTrackedKeyframeIfPresent(timeMs)
                         triggerGrade()
                     }
                 } catch (_: Exception) {}
@@ -695,12 +742,45 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private fun getOrCreateProxy(raw: Bitmap): Bitmap {
+        val targetWidth = 1280
+        if (raw.width <= targetWidth) return raw
+        val targetHeight = (raw.height.toFloat() * targetWidth / raw.width).toInt()
+        val cur = proxyBitmap
+        if (cur != null && cur.width == targetWidth && cur.height == targetHeight) {
+            val canvas = android.graphics.Canvas(cur)
+            val rect = android.graphics.Rect(0, 0, raw.width, raw.height)
+            val destRect = android.graphics.Rect(0, 0, targetWidth, targetHeight)
+            val paint = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG)
+            canvas.drawBitmap(raw, rect, destRect, paint)
+            return cur
+        }
+        val newProxy = Bitmap.createScaledBitmap(raw, targetWidth, targetHeight, true)
+        proxyBitmap = newProxy
+        return newProxy
+    }
+
     private fun triggerGrade() {
         gradeJob?.cancel()
         gradeJob = viewModelScope.launch(Dispatchers.Default) {
             val raw = _rawFrameBitmap.value ?: return@launch
-            val graded = SamsungLogColorScience.gradeBitmap(raw, _gradeSettings.value)
+            // P-1: Use proxy bitmap for interactive preview when dimensions exceed 1280px
+            val previewSource = if (raw.width > 1280) getOrCreateProxy(raw) else raw
+            val graded = SamsungLogColorScience.gradeBitmap(
+                source = previewSource,
+                settings = _gradeSettings.value,
+                isCancelled = { !isActive }
+            )
+            if (!isActive) return@launch
             _gradedFrameBitmap.value = graded
+
+            // P-6: Compute broadcast scopes & histogram off UI thread on background coroutine
+            val histo = SamsungLogColorScience.calculateHistogram(graded)
+            val wave = SamsungLogColorScience.calculateWaveform(graded)
+            if (isActive) {
+                _histogramData.value = histo
+                _waveformData.value = wave
+            }
         }
     }
 

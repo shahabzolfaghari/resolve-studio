@@ -3,40 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>ResolveStudio™ — 10-Bit Log Color Grading Architecture for Galaxy S24 Ultra</title>
-  <meta name="description" content="Hardware-accelerated 10-bit Samsung Log color grading suite for Galaxy S24 Ultra. Monotonic cubic splines, 33³ tetrahedral 3D LUTs, and real-time OpenGL ES 3.0 scopes." />
+  <title>ResolveStudio™ — Samsung Log Color Grading Architecture for Galaxy S24 Ultra</title>
+  <meta name="description" content="Precision Samsung Log to Rec.709 color grading suite for Galaxy S24 Ultra. Fritsch-Carlson monotonic cubic splines, Hermite highlight compression, 33³ .cube export, and realtime scopes." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23000'/%3E%3Ccircle cx='32' cy='32' r='30.5' stroke='%23fff' stroke-opacity='0.28' fill='none'/%3E%3Ctext x='31' y='43' text-anchor='middle' fill='%23fff' font-family='Georgia,serif' font-style='italic' font-size='38'%3Er%3C/text%3E%3C/svg%3E" />
 
-  <!-- Fonts: Inter + Instrument Serif + JetBrains Mono (Motionsites Mindloop / Aetheris / Neo-Museum pairing) -->
+  <!-- Fonts: Preload Primary WOFF2 & Async Swap (Zero CLS) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="preload" href="https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+  </noscript>
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-            serif: ['"Instrument Serif"', 'Georgia', 'serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
-          }
-        }
-      }
-    };
-  </script>
+  <!-- Pre-built Minified Tailwind CSS (No runtime CDN overhead) -->
+  <link rel="stylesheet" href="styles.min.css" />
 
   <style>
     :root {
       --bg: #000000;
       --surface: #070707;
       --fg: #FFFFFF;
-      --muted: rgba(255, 255, 255, 0.56);
-      --dim: rgba(255, 255, 255, 0.36);
-      --line: rgba(255, 255, 255, 0.08);
+      --muted: rgba(255, 255, 255, 0.70);
+      --dim: rgba(255, 255, 255, 0.50);
+      --line: rgba(255, 255, 255, 0.12);
       --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
       --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
     }
@@ -61,21 +52,24 @@
       color: #000000;
     }
 
-    /* ==========================================================================
-       LIQUID GLASS SURFACES + DYNAMIC POINTER SPECULAR GLARE
-       (Motionsites mindloop-landing.md & aetheris-voyage-hero.md)
-       ========================================================================== */
+    /* Universal accessible focus ring */
+    :focus-visible {
+      outline: 2px solid #FFFFFF !important;
+      outline-offset: 3px !important;
+    }
+
+    /* Liquid Glass Specular Rim */
     .liquid-glass {
       --mx: 50%;
       --my: 0%;
       background:
-        radial-gradient(420px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.065), transparent 60%),
-        rgba(255, 255, 255, 0.015);
+        radial-gradient(420px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.08), transparent 60%),
+        rgba(255, 255, 255, 0.02);
       background-blend-mode: luminosity;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: none;
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14);
       position: relative;
       overflow: hidden;
     }
@@ -87,10 +81,10 @@
       padding: 1.2px;
       background: linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.42) 0%,
-        rgba(255, 255, 255, 0.12) 25%,
-        rgba(255, 255, 255, 0.03) 55%,
-        rgba(255, 255, 255, 0.15) 100%
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.16) 25%,
+        rgba(255, 255, 255, 0.04) 55%,
+        rgba(255, 255, 255, 0.18) 100%
       );
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
@@ -103,13 +97,13 @@
       --mx: 50%;
       --my: 0%;
       background:
-        radial-gradient(560px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.08), transparent 65%),
-        rgba(255, 255, 255, 0.028);
+        radial-gradient(560px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.1), transparent 65%),
+        rgba(255, 255, 255, 0.035);
       background-blend-mode: luminosity;
       backdrop-filter: blur(28px);
       -webkit-backdrop-filter: blur(28px);
       border: none;
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.16);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.18);
       position: relative;
       overflow: hidden;
     }
@@ -121,10 +115,10 @@
       padding: 1.2px;
       background: linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.52) 0%,
-        rgba(255, 255, 255, 0.16) 22%,
-        rgba(255, 255, 255, 0.04) 55%,
-        rgba(255, 255, 255, 0.18) 100%
+        rgba(255, 255, 255, 0.55) 0%,
+        rgba(255, 255, 255, 0.20) 22%,
+        rgba(255, 255, 255, 0.05) 55%,
+        rgba(255, 255, 255, 0.22) 100%
       );
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
@@ -133,19 +127,17 @@
       z-index: 2;
     }
 
-    /* ==========================================================================
-       WORD-BY-WORD 3-STEP BLUR TEXT & SCROLL-TRIGGERED ENTRANCES
-       ========================================================================== */
+    /* Word-by-Word BlurText Entrance */
     @keyframes blurWordIn {
       0% {
         filter: blur(12px);
         opacity: 0;
-        transform: translate3d(0, 26px, 0);
+        transform: translate3d(0, 22px, 0);
       }
       55% {
-        filter: blur(4px);
-        opacity: 0.65;
-        transform: translate3d(0, 6px, 0);
+        filter: blur(3px);
+        opacity: 0.75;
+        transform: translate3d(0, 4px, 0);
       }
       100% {
         filter: blur(0px);
@@ -158,14 +150,14 @@
       display: inline-block;
       opacity: 0;
       will-change: transform, filter, opacity;
-      animation: blurWordIn 0.88s var(--ease-spring) forwards;
+      animation: blurWordIn 0.82s var(--ease-spring) forwards;
     }
 
     @keyframes fadeRiseIn {
       0% {
         opacity: 0;
-        filter: blur(8px);
-        transform: translate3d(0, 18px, 0);
+        filter: blur(6px);
+        transform: translate3d(0, 14px, 0);
       }
       100% {
         opacity: 1;
@@ -176,18 +168,17 @@
 
     .fade-rise {
       opacity: 0;
-      animation: fadeRiseIn 0.9s var(--ease-out-expo) forwards;
+      animation: fadeRiseIn 0.85s var(--ease-out-expo) forwards;
     }
 
-    /* Scroll-triggered choreographed reveals */
     .scroll-reveal {
       opacity: 0;
-      filter: blur(8px);
-      transform: translate3d(0, 28px, 0);
+      filter: blur(6px);
+      transform: translate3d(0, 20px, 0);
       transition:
-        opacity 0.9s var(--ease-out-expo),
-        filter 0.9s var(--ease-out-expo),
-        transform 0.9s var(--ease-out-expo);
+        opacity 0.8s var(--ease-out-expo),
+        filter 0.8s var(--ease-out-expo),
+        transform 0.8s var(--ease-out-expo);
       will-change: opacity, filter, transform;
     }
     .scroll-reveal.in-view {
@@ -196,7 +187,6 @@
       transform: translate3d(0, 0, 0);
     }
 
-    /* Animated hairline draw-in on scroll */
     .hairline-draw {
       position: relative;
     }
@@ -207,76 +197,74 @@
       right: 0;
       bottom: 0;
       height: 1px;
-      background: linear-gradient(90deg, rgba(255,255,255,0.28), rgba(255,255,255,0.08) 60%, rgba(255,255,255,0.22));
+      background: linear-gradient(90deg, rgba(255,255,255,0.32), rgba(255,255,255,0.1) 60%, rgba(255,255,255,0.26));
       transform: scaleX(0);
       transform-origin: left center;
-      transition: transform 1.25s var(--ease-out-expo);
+      transition: transform 1.1s var(--ease-out-expo);
     }
     .hairline-draw.in-view::after {
       transform: scaleX(1);
     }
 
-    /* Architectural Hairline Grid */
-    .hairline-t { border-top: 1px solid rgba(255, 255, 255, 0.08); }
-    .hairline-b { border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-    .hairline-l { border-left: 1px solid rgba(255, 255, 255, 0.08); }
-    .hairline-r { border-right: 1px solid rgba(255, 255, 255, 0.08); }
+    .hairline-t { border-top: 1px solid rgba(255, 255, 255, 0.1); }
+    .hairline-b { border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .hairline-l { border-left: 1px solid rgba(255, 255, 255, 0.1); }
+    .hairline-r { border-right: 1px solid rgba(255, 255, 255, 0.1); }
 
-    /* Hardware frame polish */
     .device-frame {
       background: #050505;
       border-radius: 26px;
       padding: 7px;
       box-shadow:
         0 40px 110px rgba(0, 0, 0, 0.95),
-        0 0 0 1px rgba(255, 255, 255, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.24);
+        0 0 0 1px rgba(255, 255, 255, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.26);
       position: relative;
     }
 
     .device-frame-landscape {
       background: #050505;
-      border-radius: 22px;
+      border-radius: 20px;
       padding: 6px;
       box-shadow:
         0 50px 140px rgba(0, 0, 0, 0.95),
-        0 0 0 1px rgba(255, 255, 255, 0.16),
-        inset 0 1px 0 rgba(255, 255, 255, 0.26);
+        0 0 0 1px rgba(255, 255, 255, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
       position: relative;
     }
     @media (min-width: 640px) {
       .device-frame-landscape {
         border-radius: 28px;
-        padding: 10px;
+        padding: 9px;
       }
     }
 
-    /* Chapter rows (Neo-Museum style + Auto-Cycle progress bar) */
+    /* Chapter rows */
     .chapter-row {
       position: relative;
-      transition: background-color 0.45s var(--ease-out-expo), padding-left 0.45s var(--ease-out-expo);
+      transition: background-color 0.4s var(--ease-out-expo);
     }
     .chapter-row .chapter-title {
-      color: rgba(255, 255, 255, 0.34);
-      transition: color 0.45s var(--ease-out-expo), transform 0.45s var(--ease-out-expo);
+      color: rgba(255, 255, 255, 0.55);
+      transition: color 0.4s var(--ease-out-expo), transform 0.4s var(--ease-out-expo);
     }
     .chapter-row .chapter-desc {
       max-height: 0;
       opacity: 0;
       overflow: hidden;
-      transition: max-height 0.55s var(--ease-out-expo), opacity 0.45s var(--ease-out-expo), margin-top 0.45s var(--ease-out-expo);
+      transition: max-height 0.45s var(--ease-out-expo), opacity 0.4s var(--ease-out-expo), margin-top 0.4s var(--ease-out-expo);
     }
     .chapter-row.active {
-      background-color: rgba(255, 255, 255, 0.028);
+      background-color: rgba(255, 255, 255, 0.032);
     }
     .chapter-row.active .chapter-title {
       color: #FFFFFF;
-      transform: translate3d(4px, 0, 0);
+      transform: translate3d(3px, 0, 0);
     }
     .chapter-row.active .chapter-desc {
-      max-height: 200px;
+      max-height: 180px;
       opacity: 1;
-      margin-top: 12px;
+      margin-top: 10px;
     }
     .chapter-progress {
       position: absolute;
@@ -291,18 +279,17 @@
       pointer-events: none;
     }
     .chapter-row.active .chapter-progress {
-      opacity: 0.85;
+      opacity: 0.9;
     }
 
-    /* Room stage image transitions */
     .room-shot {
       opacity: 0;
-      transform: scale(0.94) translate3d(0, 16px, 0);
-      filter: blur(10px);
+      transform: scale(0.95) translate3d(0, 14px, 0);
+      filter: blur(8px);
       transition:
-        opacity 0.65s var(--ease-spring),
-        transform 0.65s var(--ease-spring),
-        filter 0.65s var(--ease-spring);
+        opacity 0.6s var(--ease-spring),
+        transform 0.6s var(--ease-spring),
+        filter 0.6s var(--ease-spring);
       pointer-events: none;
     }
     .room-shot.active {
@@ -312,58 +299,59 @@
       pointer-events: auto;
     }
 
-    /* Sliding numeric counter */
     .counter-reel {
-      transition: transform 0.6s var(--ease-spring);
+      transition: transform 0.55s var(--ease-spring);
     }
 
-    /* Custom Exclusion Cursor (Desktop only) */
     @media (pointer: fine) {
-      #custom-cursor {
-        display: flex;
-      }
+      #custom-cursor { display: flex; }
     }
     @media (pointer: coarse) {
+      #custom-cursor { display: none !important; }
+    }
+
+    .film-grain {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Dialog styling */
+    dialog#lightbox-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(20px);
+    }
+
+    /* REDUCED MOTION PREFERENCE (WCAG 2.2 AA) */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+      .blur-word, .fade-rise, .scroll-reveal {
+        opacity: 1 !important;
+        filter: none !important;
+        transform: none !important;
+      }
+      #hero-stage {
+        transform: none !important;
+      }
       #custom-cursor {
         display: none !important;
       }
-    }
-
-    /* Subtle film grain overlay */
-    .film-grain {
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    }
-
-    /* Hide scrollbar for clean horizontal scrollers */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    /* Subtle scanning optical laser line on darkroom stage */
-    @keyframes scanlinePass {
-      0% { transform: translate3d(0, -100%, 0); opacity: 0; }
-      15% { opacity: 0.35; }
-      85% { opacity: 0.35; }
-      100% { transform: translate3d(0, 650px, 0); opacity: 0; }
-    }
-    .optical-scanline {
-      height: 1px;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.45) 50%, transparent 100%);
-      animation: scanlinePass 7.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      .chapter-progress {
+        display: none !important;
+      }
     }
   </style>
 </head>
 
 <body class="bg-black text-white antialiased selection:bg-white selection:text-black">
 
-  <!-- ========================================================================
-       TOP 1PX SCROLL PROGRESS LASER & ARCHITECTURAL GUIDE LINES
-       ======================================================================== -->
-  <div class="fixed top-0 left-0 right-0 z-[60] h-[1.5px] bg-white/[0.06] pointer-events-none">
+  <!-- Top 1px Scroll Progress Laser -->
+  <div class="fixed top-0 left-0 right-0 z-[60] h-[1.5px] bg-white/[0.08] pointer-events-none" aria-hidden="true">
     <div
       id="scroll-progress-bar"
       class="h-full w-full bg-white origin-left"
@@ -371,32 +359,31 @@
     ></div>
   </div>
 
-  <div class="pointer-events-none fixed inset-0 z-10 mx-auto max-w-[1440px] px-4 sm:px-8">
+  <div class="pointer-events-none fixed inset-0 z-10 mx-auto max-w-[1440px] px-4 sm:px-8" aria-hidden="true">
     <div class="relative h-full w-full border-x border-white/[0.06]">
       <div class="hidden lg:block absolute inset-y-0 left-1/2 w-px bg-white/[0.04]"></div>
     </div>
   </div>
-  <div class="film-grain pointer-events-none fixed inset-0 z-40 opacity-70"></div>
+  <div class="film-grain pointer-events-none fixed inset-0 z-40 opacity-70" aria-hidden="true"></div>
 
   <!-- Custom rAF-lerped Exclusion Cursor -->
   <div
     id="custom-cursor"
     class="pointer-events-none fixed top-0 left-0 z-50 hidden h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[9px] font-mono uppercase tracking-[0.18em] text-black mix-blend-exclusion transition-[width,height] duration-300 ease-out"
+    aria-hidden="true"
   >
     <span id="cursor-label" class="opacity-0 transition-opacity duration-200"></span>
   </div>
 
-  <!-- ========================================================================
-       FLOATING SPLIT NAVIGATION + MOBILE FULLSCREEN DRAWER
-       ======================================================================== -->
+  <!-- FLOATING NAVIGATION -->
   <header class="fixed top-0 inset-x-0 z-50 mx-auto max-w-[1440px] px-4 sm:px-10 pt-4 sm:pt-5 pointer-events-none">
     <div class="flex items-center justify-between gap-3">
-      <!-- Left: Liquid Glass Emblem + Brand Mark -->
+      <!-- Left: Brand Mark -->
       <a
         href="#top"
         data-cursor="HOME"
         data-magnetic="0.18"
-        class="pointer-events-auto group flex items-center gap-3 focus:outline-none"
+        class="pointer-events-auto group flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-white rounded-full p-1"
       >
         <div class="liquid-glass flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-105">
           <span class="font-serif italic text-xl text-white pr-0.5">r</span>
@@ -404,70 +391,70 @@
         <div class="flex flex-col">
           <div class="flex items-center gap-1.5">
             <span class="text-sm font-medium tracking-[-0.02em] text-white">ResolveStudio</span>
-            <span class="text-[10px] font-mono text-white/40">™</span>
+            <span class="text-[10px] font-mono text-white/60">™</span>
           </div>
-          <span class="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/40">
-            S24 Ultra · 10-Bit Log
+          <span class="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/60">
+            Galaxy S24 Ultra · Log
           </span>
         </div>
       </a>
 
-      <!-- Center: Liquid Glass Pill Bar (Desktop) -->
+      <!-- Center: Pill Navigation -->
       <nav
         aria-label="Primary Navigation"
         class="liquid-glass pointer-events-auto hidden md:flex items-center gap-1 rounded-full p-1.5 pl-5"
       >
-        <a href="#rooms" class="px-3 py-1.5 text-xs font-normal text-white/75 hover:text-white transition-colors">
+        <a href="#rooms" class="px-3 py-1.5 text-xs font-normal text-white/80 hover:text-white transition-colors rounded-full focus-visible:ring-1 focus-visible:ring-white">
           Grading Rooms
         </a>
-        <span class="text-white/20 text-xs select-none">•</span>
-        <a href="#optical-math" class="px-3 py-1.5 text-xs font-normal text-white/75 hover:text-white transition-colors">
+        <span class="text-white/30 text-xs select-none">•</span>
+        <a href="#optical-math" class="px-3 py-1.5 text-xs font-normal text-white/80 hover:text-white transition-colors rounded-full focus-visible:ring-1 focus-visible:ring-white">
           Optical Math
         </a>
-        <span class="text-white/20 text-xs select-none">•</span>
-        <a href="#archive" class="px-3 py-1.5 text-xs font-normal text-white/75 hover:text-white transition-colors">
+        <span class="text-white/30 text-xs select-none">•</span>
+        <a href="#archive" class="px-3 py-1.5 text-xs font-normal text-white/80 hover:text-white transition-colors rounded-full focus-visible:ring-1 focus-visible:ring-white">
           Capture Archive
         </a>
-        <span class="text-white/20 text-xs select-none">•</span>
-        <a href="#manifesto" class="px-3 py-1.5 text-xs font-normal text-white/75 hover:text-white transition-colors">
+        <span class="text-white/30 text-xs select-none">•</span>
+        <a href="#manifesto" class="px-3 py-1.5 text-xs font-normal text-white/80 hover:text-white transition-colors rounded-full focus-visible:ring-1 focus-visible:ring-white">
           Architecture
         </a>
 
         <a
-          href="#download"
-          data-cursor="GET"
+          href="https://github.com/shahabzolfaghari/resolve-studio/releases/download/v1.0.0/ResolveStudio-debug.apk"
+          download
+          data-cursor="GET APK"
           data-magnetic="0.22"
-          class="ml-3 group inline-flex items-center gap-2.5 rounded-full bg-white pl-4 pr-1.5 py-1.5 text-xs font-medium text-black transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+          class="ml-3 group inline-flex items-center gap-2.5 rounded-full bg-white pl-4 pr-1.5 py-1.5 text-xs font-medium text-black transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white"
         >
-          <span>Download Studio</span>
-          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-black text-white transition-transform duration-300 group-hover:-rotate-45">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <span>Download APK</span>
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-black text-white transition-transform duration-300 group-hover:-rotate-45" aria-hidden="true">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
               <path d="M2.5 9.5L9.5 2.5M9.5 2.5H3.5M9.5 2.5V8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </span>
         </a>
       </nav>
 
-      <!-- Right: Live Scroll SMPTE Timecode Readout & Mobile Menu Trigger -->
+      <!-- Right: Live SMPTE Timecode & Mobile Toggle -->
       <div class="pointer-events-auto flex items-center gap-2.5">
         <div class="liquid-glass hidden lg:flex items-center gap-2.5 rounded-full px-3.5 py-2">
-          <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
-          <span id="nav-timecode" class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
+          <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse" aria-hidden="true"></span>
+          <span id="nav-timecode" class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/80" aria-label="Playback Timecode">
             TC 01:00:00:00
           </span>
         </div>
 
-        <!-- Mobile Menu Toggle Pill -->
         <button
           id="mobile-menu-btn"
           type="button"
           onclick="toggleMobileMenu()"
           aria-label="Toggle Navigation Menu"
           aria-expanded="false"
-          class="liquid-glass md:hidden inline-flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs font-mono uppercase tracking-[0.16em] text-white"
+          class="liquid-glass md:hidden inline-flex items-center gap-2.5 rounded-full px-4 py-2.5 min-h-[44px] text-xs font-mono uppercase tracking-[0.16em] text-white focus-visible:ring-2 focus-visible:ring-white"
         >
           <span id="mobile-menu-label">MENU</span>
-          <span class="relative flex h-3 w-3.5 flex-col justify-between">
+          <span class="relative flex h-3 w-3.5 flex-col justify-between" aria-hidden="true">
             <span id="burger-1" class="block h-px w-full bg-white transition-transform duration-300"></span>
             <span id="burger-2" class="block h-px w-full bg-white transition-opacity duration-300"></span>
             <span id="burger-3" class="block h-px w-full bg-white transition-transform duration-300"></span>
@@ -476,70 +463,68 @@
       </div>
     </div>
 
-    <!-- Mobile Navigation Dropdown Sheet -->
+    <!-- Mobile Drawer -->
     <div
       id="mobile-menu-drawer"
       class="pointer-events-none md:hidden mt-3 overflow-hidden transition-all duration-500 ease-out max-h-0 opacity-0"
     >
       <div class="liquid-glass-strong pointer-events-auto rounded-3xl p-6 flex flex-col gap-4">
-        <div class="flex items-center justify-between pb-3 hairline-b font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">
+        <div class="flex items-center justify-between pb-3 hairline-b font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">
           <span>NAVIGATION MATRIX</span>
-          <span>GLES 3.0 · 60FPS</span>
+          <span>CALIBRATED LOG</span>
         </div>
         <a href="#rooms" onclick="toggleMobileMenu(false)" class="flex items-center justify-between py-2 text-lg font-normal text-white">
           <span>01 · Grading Rooms</span>
-          <span class="font-mono text-xs text-white/40">01 / 05 →</span>
+          <span class="font-mono text-xs text-white/60">01 / 05 →</span>
         </a>
         <a href="#optical-math" onclick="toggleMobileMenu(false)" class="flex items-center justify-between py-2 text-lg font-normal text-white">
           <span>02 · Optical Log Math</span>
-          <span class="font-mono text-xs text-white/40">CURVE →</span>
+          <span class="font-mono text-xs text-white/60">CURVE →</span>
         </a>
         <a href="#archive" onclick="toggleMobileMenu(false)" class="flex items-center justify-between py-2 text-lg font-normal text-white">
           <span>03 · Capture Archive</span>
-          <span class="font-mono text-xs text-white/40">PLATES →</span>
+          <span class="font-mono text-xs text-white/60">PLATES →</span>
         </a>
         <a href="#manifesto" onclick="toggleMobileMenu(false)" class="flex items-center justify-between py-2 text-lg font-normal text-white">
           <span>04 · Darkroom Architecture</span>
-          <span class="font-mono text-xs text-white/40">SPECS →</span>
+          <span class="font-mono text-xs text-white/60">SPECS →</span>
         </a>
         <a
-          href="#download"
+          href="https://github.com/shahabzolfaghari/resolve-studio/releases/download/v1.0.0/ResolveStudio-debug.apk"
+          download
           onclick="toggleMobileMenu(false)"
-          class="mt-2 flex items-center justify-between rounded-full bg-white px-5 py-3 text-sm font-medium text-black"
+          class="mt-2 flex items-center justify-between rounded-full bg-white px-5 py-3.5 min-h-[44px] text-sm font-medium text-black"
         >
-          <span>Download Studio APK</span>
-          <span>↗</span>
+          <span>Download Studio APK (v1.0.0)</span>
+          <span aria-hidden="true">↗</span>
         </a>
       </div>
     </div>
   </header>
 
-  <!-- ========================================================================
-       SECTION 1 — HERO + 60FPS SCROLL-LERPED 3D HARDWARE STAGE
-       ======================================================================== -->
+  <!-- SECTION 1 — HERO + 3D WORKSTATION STAGE -->
   <main id="top" class="relative">
     <section class="relative min-h-screen w-full overflow-hidden pt-28 pb-16 sm:pt-36 sm:pb-24">
-      <!-- Monochrome Atmospheric Video Layer (#28 from Motionsites MEDIA.md) -->
-      <div class="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <!-- Background Video Layer (Lazy Loaded via JS to Save 22MB) -->
+      <div class="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
         <video
           id="hero-video"
           class="fading-video h-full w-full object-cover grayscale contrast-125"
           style="opacity: 0; mix-blend-mode: screen;"
-          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4"
-          autoplay
+          data-src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4"
           muted
           playsinline
-          preload="auto"
+          preload="none"
         ></video>
-        <div class="absolute inset-0 bg-gradient-to-b from-black via-black/45 to-black"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,transparent_0%,#000000_78%)]"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-black via-black/50 to-black"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,transparent_0%,#000000_80%)]"></div>
       </div>
 
       <!-- Hero Copy Stack -->
       <div class="relative z-20 mx-auto max-w-[1440px] px-4 sm:px-10">
         <div class="mx-auto flex max-w-4xl flex-col items-center text-center">
 
-          <!-- Liquid Glass Announcement Pill -->
+          <!-- Announcement Pill -->
           <div
             class="liquid-glass fade-rise inline-flex items-center gap-2 sm:gap-2.5 rounded-full p-1 pr-3.5 sm:pr-4 mb-7 sm:mb-8 max-w-full"
             style="animation-delay: 0.05s;"
@@ -547,48 +532,52 @@
             <span class="shrink-0 rounded-full bg-white px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-black">
               v1.0
             </span>
-            <span class="truncate text-[11px] sm:text-xs text-white/75 tracking-[-0.01em]">
-              Native 10-Bit Samsung Log Engine · Galaxy S24 Ultra
+            <span class="truncate text-[11px] sm:text-xs text-white/85 tracking-[-0.01em]">
+              Samsung Log to Rec.709 Transformation Engine · Galaxy S24 Ultra
             </span>
           </div>
 
-          <!-- Display Headline with Word-by-Word 3-Step BlurText & Muted Serif Accent -->
+          <!-- Display Headline with 3-Step BlurText -->
           <h1
-            aria-label="Cinema color science, built for pocket Log."
-            class="text-[2.75rem] sm:text-7xl lg:text-[5.6rem] font-normal tracking-[-0.04em] leading-[0.98] text-white"
+            class="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal tracking-[-0.04em] leading-[1.1] sm:leading-[0.98] text-white"
           >
-            <span class="blur-word" style="animation-delay: 0.08s;">Cinema</span>
-            <span class="blur-word" style="animation-delay: 0.16s;">color</span>
-            <span class="blur-word" style="animation-delay: 0.24s;">science,</span>
-            <br class="hidden sm:block" />
-            <span class="blur-word" style="animation-delay: 0.32s;">built</span>
-            <span class="blur-word" style="animation-delay: 0.40s;">for</span>
-            <span class="blur-word font-serif italic font-normal text-white/65 pr-1" style="animation-delay: 0.48s;">pocket</span>
-            <span class="blur-word font-serif italic font-normal text-white/65" style="animation-delay: 0.56s;">Log.</span>
+            <span class="inline-block sm:whitespace-nowrap">
+              <span class="blur-word" style="animation-delay: 0.08s;">Cinema</span>
+              <span class="blur-word" style="animation-delay: 0.16s;">color</span>
+              <span class="blur-word" style="animation-delay: 0.24s;">science,</span>
+            </span>
+            <br class="hidden sm:inline" />
+            <span class="inline-block sm:whitespace-nowrap">
+              <span class="blur-word" style="animation-delay: 0.32s;">built</span>
+              <span class="blur-word" style="animation-delay: 0.40s;">for</span>
+              <span class="blur-word font-serif italic font-normal text-white/70 pr-1" style="animation-delay: 0.48s;">pocket</span>
+              <span class="blur-word font-serif italic font-normal text-white/70" style="animation-delay: 0.56s;">Log.</span>
+            </span>
           </h1>
 
-          <!-- Calm 1-Sentence Subtitle (max 54ch) -->
+          <!-- Concise Verified Subtitle -->
           <p
-            class="fade-rise mt-5 sm:mt-6 max-w-[54ch] text-sm sm:text-lg font-normal leading-relaxed text-white/55 px-2"
+            class="fade-rise mt-5 sm:mt-6 max-w-[54ch] text-sm sm:text-lg font-normal leading-relaxed text-white/70 px-2"
             style="animation-delay: 0.62s;"
           >
-            A zero-compromise OpenGL ES 3.0 grading room engineered for S24 Ultra 10-bit HEVC streams—combining tetrahedral 33³ LUTs, monotonic cubic splines, and real-time parade scopes.
+            A dedicated color grading suite for Samsung Galaxy S24 Ultra—combining monotonic cubic splines, Hermite highlight compression, 3D LUT blending, and live scopes.
           </p>
 
-          <!-- Dual Magnetic Pill CTAs -->
+          <!-- Dual Pill CTAs -->
           <div
             class="fade-rise mt-8 sm:mt-9 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-3.5 w-full sm:w-auto px-4 sm:px-0"
             style="animation-delay: 0.74s;"
           >
             <a
-              href="#rooms"
-              data-cursor="ENTER"
+              href="https://github.com/shahabzolfaghari/resolve-studio/releases/download/v1.0.0/ResolveStudio-debug.apk"
+              download
+              data-cursor="DOWNLOAD"
               data-magnetic="0.25"
-              class="w-full sm:w-auto justify-between sm:justify-center group inline-flex items-center gap-3 rounded-full bg-white pl-6 pr-2 py-2 text-sm font-medium text-black transition-transform duration-300 hover:scale-[1.03] active:scale-[0.98]"
+              class="w-full sm:w-auto min-h-[44px] justify-between sm:justify-center group inline-flex items-center gap-3 rounded-full bg-white pl-6 pr-2 py-2 text-sm font-medium text-black transition-transform duration-300 hover:scale-[1.03] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white"
             >
-              <span>Enter Grading Suite</span>
-              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition-transform duration-300 group-hover:-rotate-45">
-                <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <span>Download Studio APK</span>
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition-transform duration-300 group-hover:-rotate-45" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
                   <path d="M2.5 9.5L9.5 2.5M9.5 2.5H3.5M9.5 2.5V8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
@@ -596,228 +585,265 @@
 
             <a
               href="#optical-math"
-              data-cursor="MATH"
+              data-cursor="CURVE"
               data-magnetic="0.2"
-              class="w-full sm:w-auto justify-center liquid-glass inline-flex items-center gap-2.5 rounded-full px-6 py-3 text-sm font-normal text-white/85 transition-all duration-300 hover:bg-white/[0.05] hover:text-white"
+              class="w-full sm:w-auto min-h-[44px] justify-center liquid-glass inline-flex items-center gap-2.5 rounded-full px-6 py-3 text-sm font-normal text-white/90 transition-all duration-300 hover:bg-white/[0.06] hover:text-white focus-visible:ring-2 focus-visible:ring-white"
             >
-              <span>Inspect Log Transfer Curve</span>
-              <span class="font-mono text-xs text-white/45">02</span>
+              <span>Inspect Transfer Curve</span>
+              <span class="font-mono text-xs text-white/60">02</span>
             </a>
           </div>
         </div>
 
-        <!-- ==================================================================
-             3D SCROLL-LERPED & POINTER-TILTED HARDWARE STAGE
-             ================================================================== -->
-        <div class="mt-12 sm:mt-20" style="perspective: 1800px;">
+        <!-- 3D Perspective Hardware Stage -->
+        <div class="mt-12 sm:mt-18" style="perspective: 1800px;">
           <div
             id="hero-stage"
             class="relative mx-auto max-w-[1160px] will-change-transform"
-            style="transform: rotateX(13deg) scale(0.93); transform-style: preserve-3d;"
+            style="transform: rotateX(12deg) scale(0.94); transform-style: preserve-3d;"
           >
-            <!-- Top Studio Telemetry Bar -->
-            <div class="mb-3 flex items-center justify-between gap-2 px-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/40 whitespace-nowrap">
+            <div class="mb-3 flex items-center justify-between gap-2 px-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/60 whitespace-nowrap">
               <span class="truncate">[ MONITOR 01 · SPLIT WORKSTATION ]</span>
-              <span class="hidden sm:inline">1760 × 1040 NATIVE · BT.2020 → REC.709</span>
+              <span class="hidden sm:inline">S24 ULTRA RAW LOG → REC.709</span>
               <span class="shrink-0">TC 01:14:22:09</span>
             </div>
 
-            <!-- Main Centerpiece: Real Captured Landscape Workstation (app-landscape-studio.png) -->
-            <div
-              onclick="openLightbox('public/screenshots/app-landscape-studio.png', 'Adaptive w880dp Landscape Split-Monitor Workstation (1760×1040)')"
+            <!-- Responsive Picture Centerpiece (WebP + AVIF with 640w Mobile Variant) -->
+            <button
+              type="button"
+              onclick="openLightbox('screenshots/app-landscape-studio.png', 'Adaptive w880dp Landscape Split-Monitor Workstation (1760×1040)')"
               data-cursor="ZOOM"
-              class="device-frame-landscape relative mx-auto overflow-hidden cursor-pointer group"
+              aria-label="Inspect Landscape Studio Workstation full resolution"
+              class="device-frame-landscape relative mx-auto overflow-hidden cursor-pointer group w-full aspect-[1760/1040] text-left p-0 border-0 focus-visible:ring-2 focus-visible:ring-white"
             >
-              <img
-                src="public/screenshots/app-landscape-studio.png"
-                alt="ResolveStudio Landscape Split-Monitor Workstation showing live RGB Waveform Parade and Lift Gamma Gain Offset Color Wheels"
-                width="1760"
-                height="1040"
-                class="block w-full h-auto rounded-[16px] sm:rounded-[20px] select-none transition-transform duration-700 group-hover:scale-[1.01]"
-                fetchpriority="high"
-              />
-            </div>
+              <picture>
+                <source media="(max-width: 640px)" type="image/avif" srcset="screenshots/app-landscape-studio-640.avif" />
+                <source media="(max-width: 640px)" type="image/webp" srcset="screenshots/app-landscape-studio-640.webp" />
+                <source type="image/avif" srcset="screenshots/app-landscape-studio.avif" />
+                <source type="image/webp" srcset="screenshots/app-landscape-studio.webp" />
+                <img
+                  src="screenshots/app-landscape-studio.png"
+                  alt="ResolveStudio Landscape Split-Monitor Workstation showing live RGB Waveform Parade and Lift Gamma Gain Offset Color Wheels"
+                  width="1760"
+                  height="1040"
+                  class="block w-full h-auto aspect-[1760/1040] rounded-[16px] sm:rounded-[20px] select-none transition-transform duration-700 group-hover:scale-[1.01]"
+                  fetchpriority="high"
+                />
+              </picture>
+            </button>
 
-            <!-- Mobile Twin Portrait Preview Strip (Shown on <1280px where side wings tuck in) -->
+            <!-- Mobile Quick Previews -->
             <div class="mt-4 grid grid-cols-2 gap-3 xl:hidden">
-              <div
-                onclick="openLightbox('public/screenshots/app-wheels-scopes.png', 'Primary 3-Way Color Wheels & Luma/RGB Histogram')"
-                class="liquid-glass rounded-2xl p-2.5 flex items-center gap-3 cursor-pointer"
+              <button
+                type="button"
+                onclick="openLightbox('screenshots/app-wheels-scopes.png', 'Primary 3-Way Color Wheels & Luma/RGB Histogram')"
+                class="liquid-glass rounded-2xl p-2.5 flex items-center gap-3 text-left w-full min-h-[44px] focus-visible:ring-2 focus-visible:ring-white"
               >
-                <img
-                  src="public/screenshots/app-wheels-scopes.png"
-                  alt="ResolveStudio Portrait Color Wheels"
-                  width="824"
-                  height="1830"
-                  class="w-12 sm:w-14 h-auto rounded-lg border border-white/10 shrink-0"
-                />
+                <picture class="shrink-0">
+                  <source type="image/avif" srcset="screenshots/app-wheels-scopes.avif" />
+                  <source type="image/webp" srcset="screenshots/app-wheels-scopes.webp" />
+                  <img
+                    src="screenshots/app-wheels-scopes-640.png"
+                    alt="ResolveStudio Color Wheels"
+                    width="824"
+                    height="1830"
+                    loading="lazy"
+                    decoding="async"
+                    class="w-12 sm:w-14 h-auto rounded-lg border border-white/10"
+                  />
+                </picture>
                 <div class="min-w-0">
-                  <div class="font-mono text-[9px] uppercase tracking-[0.16em] text-white/45">DOCK 01</div>
+                  <div class="font-mono text-[9px] uppercase tracking-[0.16em] text-white/60">DOCK 01</div>
                   <div class="text-xs font-medium text-white truncate">3-Way Color Wheels</div>
-                  <div class="text-[11px] text-white/50 truncate">Lift · Gamma · Gain</div>
+                  <div class="text-[11px] text-white/60 truncate">Lift · Gamma · Gain</div>
                 </div>
-              </div>
+              </button>
 
-              <div
-                onclick="openLightbox('public/screenshots/app-curves-parade.png', 'Monotonic Cubic Spline Curves & RGB Waveform Parade')"
-                class="liquid-glass rounded-2xl p-2.5 flex items-center gap-3 cursor-pointer"
+              <button
+                type="button"
+                onclick="openLightbox('screenshots/app-curves-parade.png', 'Monotonic Cubic Spline Curves & RGB Waveform Parade')"
+                class="liquid-glass rounded-2xl p-2.5 flex items-center gap-3 text-left w-full min-h-[44px] focus-visible:ring-2 focus-visible:ring-white"
               >
-                <img
-                  src="public/screenshots/app-curves-parade.png"
-                  alt="ResolveStudio Portrait Spline Curves"
-                  width="824"
-                  height="1830"
-                  class="w-12 sm:w-14 h-auto rounded-lg border border-white/10 shrink-0"
-                />
+                <picture class="shrink-0">
+                  <source type="image/avif" srcset="screenshots/app-curves-parade.avif" />
+                  <source type="image/webp" srcset="screenshots/app-curves-parade.webp" />
+                  <img
+                    src="screenshots/app-curves-parade-640.png"
+                    alt="ResolveStudio Spline Curves"
+                    width="824"
+                    height="1830"
+                    loading="lazy"
+                    decoding="async"
+                    class="w-12 sm:w-14 h-auto rounded-lg border border-white/10"
+                  />
+                </picture>
                 <div class="min-w-0">
-                  <div class="font-mono text-[9px] uppercase tracking-[0.16em] text-white/45">DOCK 02</div>
+                  <div class="font-mono text-[9px] uppercase tracking-[0.16em] text-white/60">DOCK 02</div>
                   <div class="text-xs font-medium text-white truncate">Spline + RGB Parade</div>
-                  <div class="text-[11px] text-white/50 truncate">Scope + Tool Split</div>
+                  <div class="text-[11px] text-white/60 truncate">Scope + Tool Split</div>
                 </div>
-              </div>
+              </button>
             </div>
 
-            <!-- Desktop Flanking Floating Portrait Capture Docks (3D Z-Depth Parallax Layers) -->
-            <div
+            <!-- Desktop Wings -->
+            <button
+              type="button"
               id="hero-wing-left"
               data-cursor="ZOOM"
-              onclick="openLightbox('public/screenshots/app-wheels-scopes.png', 'Primary 3-Way Color Wheels & Luma/RGB Histogram')"
-              class="device-frame hidden xl:block absolute -left-10 -bottom-12 w-[230px] cursor-pointer transition-transform duration-500 hover:scale-[1.03]"
+              aria-label="Inspect Primary 3-Way Color Wheels"
+              onclick="openLightbox('screenshots/app-wheels-scopes.png', 'Primary 3-Way Color Wheels & Luma/RGB Histogram')"
+              class="device-frame hidden xl:block absolute -left-10 -bottom-12 w-[230px] cursor-pointer transition-transform duration-500 hover:scale-[1.03] text-left p-0 border-0 focus-visible:ring-2 focus-visible:ring-white"
               style="transform: translate3d(0, 0, 60px);"
             >
-              <img
-                src="public/screenshots/app-wheels-scopes.png"
-                alt="ResolveStudio Portrait Color Wheels and Realtime Scopes"
-                width="824"
-                height="1830"
-                class="block w-full h-auto rounded-[19px]"
-              />
-              <div class="mt-2 flex items-center justify-between px-1.5 pb-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white/45">
+              <picture>
+                <source type="image/avif" srcset="screenshots/app-wheels-scopes.avif" />
+                <source type="image/webp" srcset="screenshots/app-wheels-scopes.webp" />
+                <img
+                  src="screenshots/app-wheels-scopes.png"
+                  alt="Portrait Color Wheels and Scopes"
+                  width="824"
+                  height="1830"
+                  loading="lazy"
+                  decoding="async"
+                  class="block w-full h-auto rounded-[19px]"
+                />
+              </picture>
+              <div class="mt-2 flex items-center justify-between px-2 pb-1 font-mono text-[9px] uppercase tracking-[0.18em] text-white/60">
                 <span>WHEELS DOCK</span>
                 <span>01</span>
               </div>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               id="hero-wing-right"
               data-cursor="ZOOM"
-              onclick="openLightbox('public/screenshots/app-curves-parade.png', 'Monotonic Cubic Spline Curves & RGB Waveform Parade')"
-              class="device-frame hidden xl:block absolute -right-10 -bottom-12 w-[230px] cursor-pointer transition-transform duration-500 hover:scale-[1.03]"
+              aria-label="Inspect Spline Curves and Parade"
+              onclick="openLightbox('screenshots/app-curves-parade.png', 'Monotonic Cubic Spline Curves & RGB Waveform Parade')"
+              class="device-frame hidden xl:block absolute -right-10 -bottom-12 w-[230px] cursor-pointer transition-transform duration-500 hover:scale-[1.03] text-left p-0 border-0 focus-visible:ring-2 focus-visible:ring-white"
               style="transform: translate3d(0, 0, 80px);"
             >
-              <img
-                src="public/screenshots/app-curves-parade.png"
-                alt="ResolveStudio Portrait Custom Spline Curves and RGB Parade"
-                width="824"
-                height="1830"
-                class="block w-full h-auto rounded-[19px]"
-              />
-              <div class="mt-2 flex items-center justify-between px-1.5 pb-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white/45">
+              <picture>
+                <source type="image/avif" srcset="screenshots/app-curves-parade.avif" />
+                <source type="image/webp" srcset="screenshots/app-curves-parade.webp" />
+                <img
+                  src="screenshots/app-curves-parade.png"
+                  alt="Portrait Custom Spline Curves and RGB Parade"
+                  width="824"
+                  height="1830"
+                  loading="lazy"
+                  decoding="async"
+                  class="block w-full h-auto rounded-[19px]"
+                />
+              </picture>
+              <div class="mt-2 flex items-center justify-between px-2 pb-1 font-mono text-[9px] uppercase tracking-[0.18em] text-white/60">
                 <span>SPLINE + PARADE</span>
                 <span>02</span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- ====================================================================
-           VELOCITY-DRIVEN INFINITE ARCHITECTURAL TELEMETRY MARQUEE
-           ==================================================================== -->
-      <div class="mt-16 sm:mt-24 border-y border-white/[0.08] py-4 overflow-hidden select-none bg-white/[0.01]">
-        <div id="velocity-marquee" class="flex whitespace-nowrap will-change-transform font-mono text-[11px] uppercase tracking-[0.24em] text-white/45">
+      <!-- Verified Infinite Telemetry Marquee -->
+      <div id="marquee-section" class="mt-16 sm:mt-24 border-y border-white/[0.08] py-4 overflow-hidden select-none bg-white/[0.01]">
+        <div id="velocity-marquee" class="flex whitespace-nowrap will-change-transform font-mono text-[11px] uppercase tracking-[0.24em] text-white/60">
           <div class="marquee-segment flex items-center gap-10 pr-10 shrink-0">
-            <span>10-BIT SAMSUNG LOG HEVC</span>
-            <span class="text-white/20">✦</span>
-            <span>32-BIT FLOAT GLSL FRAGMENT PIPELINE</span>
-            <span class="text-white/20">✦</span>
-            <span>33×33×33 TETRAHEDRAL 3D LUT INTERPOLATION</span>
-            <span class="text-white/20">✦</span>
+            <span>SAMSUNG LOG TO REC.709 TRANSFORMATION</span>
+            <span class="text-white/30" aria-hidden="true">✦</span>
+            <span>33×33×33 .CUBE EXPORT</span>
+            <span class="text-white/30" aria-hidden="true">✦</span>
             <span>FRITSCH-CARLSON MONOTONIC CUBIC SPLINES</span>
-            <span class="text-white/20">✦</span>
-            <span>REALTIME RGB PARADE &amp; VECTORRAGE SCOPES</span>
-            <span class="text-white/20">✦</span>
-            <span>BT.2020 TO REC.709 CHROMATIC ADAPTATION</span>
-            <span class="text-white/20">✦</span>
+            <span class="text-white/30" aria-hidden="true">✦</span>
+            <span>REALTIME RGB PARADE &amp; VECTORSCOPE</span>
+            <span class="text-white/30" aria-hidden="true">✦</span>
+            <span>4K UHD &amp; 1080P MEDIAMUXER ENCODING</span>
+            <span class="text-white/30" aria-hidden="true">✦</span>
+            <span>ELLIPTICAL POWER WINDOWS</span>
+            <span class="text-white/30" aria-hidden="true">✦</span>
           </div>
           <div class="marquee-segment flex items-center gap-10 pr-10 shrink-0" aria-hidden="true">
-            <span>10-BIT SAMSUNG LOG HEVC</span>
-            <span class="text-white/20">✦</span>
-            <span>32-BIT FLOAT GLSL FRAGMENT PIPELINE</span>
-            <span class="text-white/20">✦</span>
-            <span>33×33×33 TETRAHEDRAL 3D LUT INTERPOLATION</span>
-            <span class="text-white/20">✦</span>
+            <span>SAMSUNG LOG TO REC.709 TRANSFORMATION</span>
+            <span class="text-white/30">✦</span>
+            <span>33×33×33 .CUBE EXPORT</span>
+            <span class="text-white/30">✦</span>
             <span>FRITSCH-CARLSON MONOTONIC CUBIC SPLINES</span>
-            <span class="text-white/20">✦</span>
-            <span>REALTIME RGB PARADE &amp; VECTORRAGE SCOPES</span>
-            <span class="text-white/20">✦</span>
-            <span>BT.2020 TO REC.709 CHROMATIC ADAPTATION</span>
-            <span class="text-white/20">✦</span>
+            <span class="text-white/30">✦</span>
+            <span>REALTIME RGB PARADE &amp; VECTORSCOPE</span>
+            <span class="text-white/30">✦</span>
+            <span>4K UHD &amp; 1080P MEDIAMUXER ENCODING</span>
+            <span class="text-white/30">✦</span>
+            <span>ELLIPTICAL POWER WINDOWS</span>
+            <span class="text-white/30">✦</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ======================================================================
-         SECTION 2 — [ 01 ] WORKSPACE ARCHITECTURE (Interactive 01/05 Switcher)
-         ====================================================================== -->
-    <section id="rooms" class="relative z-20 mx-auto max-w-[1440px] px-4 sm:px-10 py-20 sm:py-36">
-      <!-- Section Header -->
+    <!-- SECTION 2 — [ 01 ] WORKSPACE ARCHITECTURE -->
+    <section id="rooms" class="relative z-20 mx-auto max-w-[1440px] px-4 sm:px-10 py-20 sm:py-32">
       <div class="scroll-reveal hairline-draw flex flex-col lg:flex-row lg:items-end justify-between gap-6 sm:gap-8 pb-10 sm:pb-14">
         <div>
-          <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-white/45 mb-3 sm:mb-4">
+          <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-white/60 mb-3 sm:mb-4">
             [ 01 · WORKSPACE ARCHITECTURE ]
           </div>
           <h2 class="text-3xl sm:text-6xl font-normal tracking-[-0.035em] leading-[1.02] text-white">
             Five calibrated rooms.<br />
-            <span class="font-serif italic text-white/65">Zero modal clutter.</span>
+            <span class="font-serif italic text-white/70">Zero modal clutter.</span>
           </h2>
         </div>
-        <p class="max-w-[46ch] text-sm sm:text-base text-white/55 leading-relaxed">
-          Every screen below is a direct frame capture from the compiled Android application. Select any grading room—or let the studio auto-cycle—to inspect its real-time scope telemetry and Kotlin module.
-        </p>
+        <div class="flex flex-col gap-2 max-w-[46ch]">
+          <p class="text-sm sm:text-base text-white/70 leading-relaxed">
+            Direct frame captures from the compiled Android application. Select any grading room to inspect its live scopes, controls, and verified Kotlin module.
+          </p>
+          <!-- Accessible Auto-Cycle Pause Control -->
+          <button
+            id="cycle-toggle-btn"
+            type="button"
+            onclick="toggleAutoCycle()"
+            class="self-start inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-white/60 hover:text-white transition-colors focus-visible:ring-1 focus-visible:ring-white rounded py-1"
+            aria-pressed="false"
+          >
+            <span id="cycle-icon" aria-hidden="true">⏸</span>
+            <span id="cycle-label">Pause Auto-Cycle</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Mobile Quick-Select Pill Bar (Visible on <1024px so mobile users can tap rooms right above the phone) -->
-      <div class="lg:hidden mt-6 flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
-        <button type="button" onclick="selectRoom(0, true)" data-mobile-room="0" class="mobile-room-pill shrink-0 rounded-full bg-white text-black px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em]">
+      <!-- Mobile Quick-Select Pill Bar (≥44px tap targets) -->
+      <div class="lg:hidden mt-6 flex items-center gap-2 overflow-x-auto no-scrollbar pb-2" role="tablist" aria-label="Grading Rooms">
+        <button type="button" role="tab" aria-selected="true" onclick="selectRoom(0, true)" data-mobile-room="0" class="mobile-room-pill shrink-0 rounded-full bg-white text-black px-4 py-2.5 min-h-[44px] font-mono text-[11px] uppercase tracking-[0.14em]">
           01 · Wheels
         </button>
-        <button type="button" onclick="selectRoom(1, true)" data-mobile-room="1" class="mobile-room-pill shrink-0 liquid-glass rounded-full text-white/70 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em]">
+        <button type="button" role="tab" aria-selected="false" onclick="selectRoom(1, true)" data-mobile-room="1" class="mobile-room-pill shrink-0 liquid-glass rounded-full text-white/80 px-4 py-2.5 min-h-[44px] font-mono text-[11px] uppercase tracking-[0.14em]">
           02 · Curves
         </button>
-        <button type="button" onclick="selectRoom(2, true)" data-mobile-room="2" class="mobile-room-pill shrink-0 liquid-glass rounded-full text-white/70 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em]">
+        <button type="button" role="tab" aria-selected="false" onclick="selectRoom(2, true)" data-mobile-room="2" class="mobile-room-pill shrink-0 liquid-glass rounded-full text-white/80 px-4 py-2.5 min-h-[44px] font-mono text-[11px] uppercase tracking-[0.14em]">
           03 · 3D LUTs
         </button>
-        <button type="button" onclick="selectRoom(3, true)" data-mobile-room="3" class="mobile-room-pill shrink-0 liquid-glass rounded-full text-white/70 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em]">
+        <button type="button" role="tab" aria-selected="false" onclick="selectRoom(3, true)" data-mobile-room="3" class="mobile-room-pill shrink-0 liquid-glass rounded-full text-white/80 px-4 py-2.5 min-h-[44px] font-mono text-[11px] uppercase tracking-[0.14em]">
           04 · Windows
         </button>
-        <button type="button" onclick="selectRoom(4, true)" data-mobile-room="4" class="mobile-room-pill shrink-0 liquid-glass rounded-full text-white/70 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em]">
+        <button type="button" role="tab" aria-selected="false" onclick="selectRoom(4, true)" data-mobile-room="4" class="mobile-room-pill shrink-0 liquid-glass rounded-full text-white/80 px-4 py-2.5 min-h-[44px] font-mono text-[11px] uppercase tracking-[0.14em]">
           05 · Landscape
         </button>
       </div>
 
-      <!-- 2-Column Architectural Showcase -->
-      <div
-        id="rooms-interactive-zone"
-        class="grid grid-cols-1 lg:grid-cols-12"
-      >
-        <!-- Left Column (7 cols): Sticky Calibrated Darkroom Stage -->
+      <!-- 2-Column Showcase -->
+      <div id="rooms-interactive-zone" class="grid grid-cols-1 lg:grid-cols-12">
         <div class="lg:col-span-7 lg:hairline-r py-6 sm:py-10 lg:pr-10 flex flex-col justify-between">
           <div class="lg:sticky lg:top-28">
-            <!-- Top Bar: Source File & Sliding Counter -->
             <div class="flex items-center justify-between pb-4 sm:pb-6 mb-5 sm:mb-6 hairline-b">
               <div class="flex items-center gap-2.5 min-w-0">
-                <span class="h-2 w-2 rounded-full bg-white shrink-0"></span>
-                <span id="stage-source-file" class="font-mono text-xs text-white/75 truncate">
-                  ui/components/ColorWheelControl.kt
+                <span class="h-2 w-2 rounded-full bg-white shrink-0" aria-hidden="true"></span>
+                <span id="stage-source-file" class="font-mono text-xs text-white/85 truncate">
+                  ui/components/ColorWheel.kt
                 </span>
               </div>
 
-              <!-- Vertical Sliding Counter (01 / 05) -->
-              <div class="flex items-center font-mono text-xs tracking-[0.2em] text-white/45 shrink-0 ml-3">
+              <div class="flex items-center font-mono text-xs tracking-[0.2em] text-white/60 shrink-0 ml-3">
                 <span>0</span>
-                <div class="relative h-4 w-3 overflow-hidden">
+                <div class="relative h-4 w-3 overflow-hidden" aria-hidden="true">
                   <div id="room-counter-reel" class="counter-reel flex flex-col">
                     <span class="h-4 leading-4 text-white">1</span>
                     <span class="h-4 leading-4 text-white">2</span>
@@ -826,339 +852,369 @@
                     <span class="h-4 leading-4 text-white">5</span>
                   </div>
                 </div>
-                <span class="mx-1.5 text-white/25">/</span>
+                <span class="mx-1.5 text-white/30">/</span>
                 <span>05</span>
               </div>
             </div>
 
-            <!-- Hardware Viewport Container (Supports Touch Swipe Left/Right on Mobile) -->
-            <div
+            <!-- Hardware Viewport Container -->
+            <button
               id="room-stage-viewport"
+              type="button"
               data-cursor="EXPAND"
-              data-tilt="0.04"
               onclick="openActiveRoomLightbox()"
-              class="relative mx-auto flex min-h-[480px] sm:min-h-[620px] w-full items-center justify-center rounded-3xl bg-[#040404] p-5 pb-16 sm:p-10 sm:pb-20 border border-white/[0.07] cursor-pointer overflow-hidden group"
+              aria-label="Inspect active room screenshot in full resolution"
+              class="relative mx-auto flex min-h-[480px] sm:min-h-[620px] w-full items-center justify-center rounded-3xl bg-[#040404] p-5 pb-16 sm:p-10 sm:pb-20 border border-white/[0.08] cursor-pointer overflow-hidden group text-left border-0 focus-visible:ring-2 focus-visible:ring-white"
             >
-              <!-- Subtle scanning optical line + crosshair in background -->
-              <div class="optical-scanline pointer-events-none absolute inset-x-0 top-0 z-0"></div>
-              <div class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-20">
-                <div class="h-full w-px bg-white/10"></div>
-                <div class="absolute w-full h-px bg-white/10"></div>
+              <div class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-15" aria-hidden="true">
+                <div class="h-full w-px bg-white/20"></div>
+                <div class="absolute w-full h-px bg-white/20"></div>
               </div>
 
-              <!-- Room 0: Color Wheels -->
+              <!-- Room 0 -->
               <div data-room-shot="0" class="room-shot active relative z-10 w-[220px] sm:w-[285px]">
                 <div class="device-frame">
-                  <img
-                    src="public/screenshots/app-wheels-scopes.png"
-                    alt="3-Way Color Wheels and Realtime Scopes"
-                    width="824"
-                    height="1830"
-                    class="block w-full h-auto rounded-[18px]"
-                  />
+                  <picture>
+                    <source type="image/avif" srcset="screenshots/app-wheels-scopes.avif" />
+                    <source type="image/webp" srcset="screenshots/app-wheels-scopes.webp" />
+                    <img
+                      src="screenshots/app-wheels-scopes.png"
+                      alt="3-Way Color Wheels and Realtime Scopes"
+                      width="824"
+                      height="1830"
+                      loading="lazy"
+                      decoding="async"
+                      class="block w-full h-auto rounded-[18px]"
+                    />
+                  </picture>
                 </div>
               </div>
 
-              <!-- Room 1: Curves + RGB Parade -->
+              <!-- Room 1 -->
               <div data-room-shot="1" class="room-shot absolute z-10 w-[220px] sm:w-[285px]">
                 <div class="device-frame">
-                  <img
-                    src="public/screenshots/app-curves-parade.png"
-                    alt="Monotonic Cubic Spline Curves and RGB Waveform Parade"
-                    width="824"
-                    height="1830"
-                    class="block w-full h-auto rounded-[18px]"
-                  />
+                  <picture>
+                    <source type="image/avif" srcset="screenshots/app-curves-parade.avif" />
+                    <source type="image/webp" srcset="screenshots/app-curves-parade.webp" />
+                    <img
+                      src="screenshots/app-curves-parade.png"
+                      alt="Monotonic Cubic Spline Curves and RGB Waveform Parade"
+                      width="824"
+                      height="1830"
+                      loading="lazy"
+                      decoding="async"
+                      class="block w-full h-auto rounded-[18px]"
+                    />
+                  </picture>
                 </div>
               </div>
 
-              <!-- Room 2: 3D LUT Manager -->
+              <!-- Room 2 -->
               <div data-room-shot="2" class="room-shot absolute z-10 w-[220px] sm:w-[285px]">
                 <div class="device-frame">
-                  <img
-                    src="public/screenshots/app-luts-browser.png"
-                    alt="3D LUT Manager and Film Emulation Browser"
-                    width="824"
-                    height="1830"
-                    class="block w-full h-auto rounded-[18px]"
-                  />
+                  <picture>
+                    <source type="image/avif" srcset="screenshots/app-luts-browser.avif" />
+                    <source type="image/webp" srcset="screenshots/app-luts-browser.webp" />
+                    <img
+                      src="screenshots/app-luts-browser.png"
+                      alt="3D LUT Manager and Film Emulation Browser"
+                      width="824"
+                      height="1830"
+                      loading="lazy"
+                      decoding="async"
+                      class="block w-full h-auto rounded-[18px]"
+                    />
+                  </picture>
                 </div>
               </div>
 
-              <!-- Room 3: Power Windows -->
+              <!-- Room 3 -->
               <div data-room-shot="3" class="room-shot absolute z-10 w-[220px] sm:w-[285px]">
                 <div class="device-frame">
-                  <img
-                    src="public/screenshots/app-power-window.png"
-                    alt="Elliptical Power Window Qualifier Mask"
-                    width="824"
-                    height="1830"
-                    class="block w-full h-auto rounded-[18px]"
-                  />
+                  <picture>
+                    <source type="image/avif" srcset="screenshots/app-power-window.avif" />
+                    <source type="image/webp" srcset="screenshots/app-power-window.webp" />
+                    <img
+                      src="screenshots/app-power-window.png"
+                      alt="Elliptical Power Window Qualifier Mask"
+                      width="824"
+                      height="1830"
+                      loading="lazy"
+                      decoding="async"
+                      class="block w-full h-auto rounded-[18px]"
+                    />
+                  </picture>
                 </div>
               </div>
 
-              <!-- Room 4: Landscape Split-Monitor Workstation -->
+              <!-- Room 4 -->
               <div data-room-shot="4" class="room-shot absolute z-10 w-full max-w-[540px] px-2">
                 <div class="device-frame-landscape">
-                  <img
-                    src="public/screenshots/app-landscape-studio.png"
-                    alt="Landscape Dual-Monitor Grading Workstation"
-                    width="1760"
-                    height="1040"
-                    class="block w-full h-auto rounded-[16px] sm:rounded-[18px]"
-                  />
+                  <picture>
+                    <source type="image/avif" srcset="screenshots/app-landscape-studio.avif" />
+                    <source type="image/webp" srcset="screenshots/app-landscape-studio.webp" />
+                    <img
+                      src="screenshots/app-landscape-studio.png"
+                      alt="Landscape Dual-Monitor Grading Workstation"
+                      width="1760"
+                      height="1040"
+                      loading="lazy"
+                      decoding="async"
+                      class="block w-full h-auto rounded-[16px] sm:rounded-[18px]"
+                    />
+                  </picture>
                 </div>
               </div>
 
-              <!-- Bottom Floating Liquid Glass Caption inside Stage -->
-              <div class="liquid-glass absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5 sm:right-5 flex items-center justify-between rounded-full px-4 py-2.5 text-xs z-20">
-                <span id="stage-caption" class="text-white/80 truncate pr-3">
+              <div class="liquid-glass absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5 sm:right-5 flex items-center justify-between rounded-full px-4 py-2.5 text-xs z-20 pointer-events-none">
+                <span id="stage-caption" class="text-white/90 truncate pr-3">
                   S24 Sunset Portrait · Lift / Gamma / Gain / Offset + Luma/RGB Histogram
                 </span>
-                <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/50 shrink-0 group-hover:text-white transition-colors">
+                <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70 shrink-0 group-hover:text-white transition-colors" aria-hidden="true">
                   FULL RES ↗
                 </span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
 
-        <!-- Right Column (5 cols): 5 Interactive Chapter Rows with Auto-Cycle Progress Line -->
-        <div class="lg:col-span-5 flex flex-col justify-center divide-y divide-white/[0.08]">
+        <!-- Right: 5 Interactive Chapter Rows -->
+        <div class="lg:col-span-5 flex flex-col justify-center divide-y divide-white/[0.08]" role="tablist" aria-orientation="vertical">
 
-          <!-- Chapter 01 -->
+          <!-- 01 -->
           <button
             type="button"
+            role="tab"
+            aria-selected="true"
             data-room-btn="0"
             data-cursor="ROOM 01"
             onclick="selectRoom(0, true)"
             onmouseenter="selectRoom(0, true)"
-            class="chapter-row active w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus:outline-none"
+            class="chapter-row active w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus-visible:ring-1 focus-visible:ring-white"
           >
             <div class="flex items-baseline justify-between gap-4">
               <div class="flex items-baseline gap-3 sm:gap-4">
-                <span class="font-mono text-xs text-white/35">01</span>
+                <span class="font-mono text-xs text-white/50">01</span>
                 <h3 class="chapter-title text-lg sm:text-2xl font-normal tracking-[-0.025em]">
                   Primary 3-Way Wheels
                 </h3>
               </div>
-              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35 shrink-0">
+              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 shrink-0">
                 LIFT · GAMMA · GAIN
               </span>
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
-              <p class="text-sm text-white/55 leading-relaxed">
-                Tactile 2D vector pucks with precision master luma rings and double-tap neutral reset. Operates in linearised scene space prior to display transform.
+              <p class="text-sm text-white/70 leading-relaxed">
+                2D vector pucks with precision master luma rings and double-tap neutral reset. Operates directly on linearised scene values.
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">CDL Slope / Offset / Power</span>
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">256-Bin Luma Histogram</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">CDL Parameters</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">256-Bin Histogram</span>
               </div>
             </div>
-            <div class="chapter-progress" data-room-progress="0"></div>
+            <div class="chapter-progress" data-room-progress="0" aria-hidden="true"></div>
           </button>
 
-          <!-- Chapter 02 -->
+          <!-- 02 -->
           <button
             type="button"
+            role="tab"
+            aria-selected="false"
             data-room-btn="1"
             data-cursor="ROOM 02"
             onclick="selectRoom(1, true)"
             onmouseenter="selectRoom(1, true)"
-            class="chapter-row w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus:outline-none"
+            class="chapter-row w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus-visible:ring-1 focus-visible:ring-white"
           >
             <div class="flex items-baseline justify-between gap-4">
               <div class="flex items-baseline gap-3 sm:gap-4">
-                <span class="font-mono text-xs text-white/35">02</span>
+                <span class="font-mono text-xs text-white/50">02</span>
                 <h3 class="chapter-title text-lg sm:text-2xl font-normal tracking-[-0.025em]">
                   Monotonic Cubic Curves
                 </h3>
               </div>
-              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35 shrink-0">
+              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 shrink-0">
                 Y · R · G · B SPLINES
               </span>
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
-              <p class="text-sm text-white/55 leading-relaxed">
-                Fritsch-Carlson monotonic cubic Hermite interpolation prevents overshoot ringing between anchor points, paired with a live Docked RGB Waveform Parade.
+              <p class="text-sm text-white/70 leading-relaxed">
+                Fritsch-Carlson monotonic cubic Hermite interpolation guarantees smooth tonal roll-off without overshoot artifacts.
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">1D GL_TEXTURE_2D LUT</span>
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">IRE 0–100 Graticule</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Hermite Splines</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Waveform Parade</span>
               </div>
             </div>
-            <div class="chapter-progress" data-room-progress="1"></div>
+            <div class="chapter-progress" data-room-progress="1" aria-hidden="true"></div>
           </button>
 
-          <!-- Chapter 03 -->
+          <!-- 03 -->
           <button
             type="button"
+            role="tab"
+            aria-selected="false"
             data-room-btn="2"
             data-cursor="ROOM 03"
             onclick="selectRoom(2, true)"
             onmouseenter="selectRoom(2, true)"
-            class="chapter-row w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus:outline-none"
+            class="chapter-row w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus-visible:ring-1 focus-visible:ring-white"
           >
             <div class="flex items-baseline justify-between gap-4">
               <div class="flex items-baseline gap-3 sm:gap-4">
-                <span class="font-mono text-xs text-white/35">03</span>
+                <span class="font-mono text-xs text-white/50">03</span>
                 <h3 class="chapter-title text-lg sm:text-2xl font-normal tracking-[-0.025em]">
-                  33³ Tetrahedral LUT Vault
+                  3D LUT Manager
                 </h3>
               </div>
-              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35 shrink-0">
-                7 FILM STOCKS + .CUBE
+              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 shrink-0">
+                FILM RECIPES + .CUBE
               </span>
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
-              <p class="text-sm text-white/55 leading-relaxed">
-                Ships with 7 procedural 33×33×33 film print emulations—including Fujifilm Classic Neg, Kodak 2383 Print, and ACROS Monochrome—plus external `.cube` import and 0–100% blend modulation.
+              <p class="text-sm text-white/70 leading-relaxed">
+                Ships with procedural film recipes including Classic Neg, Kodak 2383, and ACROS, plus .cube import and mix intensity blending.
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">Tetrahedral 3D Sampling</span>
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">Continuous Mix Blend</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">33³ .cube Export</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Intensity Blend</span>
               </div>
             </div>
-            <div class="chapter-progress" data-room-progress="2"></div>
+            <div class="chapter-progress" data-room-progress="2" aria-hidden="true"></div>
           </button>
 
-          <!-- Chapter 04 -->
+          <!-- 04 -->
           <button
             type="button"
+            role="tab"
+            aria-selected="false"
             data-room-btn="3"
             data-cursor="ROOM 04"
             onclick="selectRoom(3, true)"
             onmouseenter="selectRoom(3, true)"
-            class="chapter-row w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus:outline-none"
+            class="chapter-row w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus-visible:ring-1 focus-visible:ring-white"
           >
             <div class="flex items-baseline justify-between gap-4">
               <div class="flex items-baseline gap-3 sm:gap-4">
-                <span class="font-mono text-xs text-white/35">04</span>
+                <span class="font-mono text-xs text-white/50">04</span>
                 <h3 class="chapter-title text-lg sm:text-2xl font-normal tracking-[-0.025em]">
                   Elliptical Power Windows
                 </h3>
               </div>
-              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35 shrink-0">
+              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 shrink-0">
                 SPATIAL QUALIFIER
               </span>
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
-              <p class="text-sm text-white/55 leading-relaxed">
-                Interactive on-monitor geometry overlay with independent X/Y radii, rotation matrix, inner/outer cosine feather falloff, and one-tap mask inversion.
+              <p class="text-sm text-white/70 leading-relaxed">
+                On-monitor geometry qualifier with independent X/Y radii, feather ring, and inside/outside mask inversion.
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">Smoothstep Falloff Field</span>
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">Inside / Outside Invert</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Feather Falloff</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Mask Invert</span>
               </div>
             </div>
-            <div class="chapter-progress" data-room-progress="3"></div>
+            <div class="chapter-progress" data-room-progress="3" aria-hidden="true"></div>
           </button>
 
-          <!-- Chapter 05 -->
+          <!-- 05 -->
           <button
             type="button"
+            role="tab"
+            aria-selected="false"
             data-room-btn="4"
             data-cursor="ROOM 05"
             onclick="selectRoom(4, true)"
             onmouseenter="selectRoom(4, true)"
-            class="chapter-row w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus:outline-none"
+            class="chapter-row w-full text-left py-6 sm:py-8 px-4 sm:px-8 focus-visible:ring-1 focus-visible:ring-white"
           >
             <div class="flex items-baseline justify-between gap-4">
               <div class="flex items-baseline gap-3 sm:gap-4">
-                <span class="font-mono text-xs text-white/35">05</span>
+                <span class="font-mono text-xs text-white/50">05</span>
                 <h3 class="chapter-title text-lg sm:text-2xl font-normal tracking-[-0.025em]">
                   Split-Monitor Workstation
                 </h3>
               </div>
-              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35 shrink-0">
+              <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 shrink-0">
                 LANDSCAPE W880DP
               </span>
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
-              <p class="text-sm text-white/55 leading-relaxed">
-                Rotate the device or connect to Samsung DeX to unlock the dual-pane reference layout: uninterrupted 16:9 grading canvas on the left, dedicated scope and control deck on the right.
+              <p class="text-sm text-white/70 leading-relaxed">
+                Rotate or connect to Samsung DeX to unlock dual-column posture: 16:9 grading view on the left, full scope deck on the right.
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">Adaptive Posture Engine</span>
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/70">Dual-Column Telemetry</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Adaptive Posture</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Samsung DeX</span>
               </div>
             </div>
-            <div class="chapter-progress" data-room-progress="4"></div>
+            <div class="chapter-progress" data-room-progress="4" aria-hidden="true"></div>
           </button>
-
         </div>
       </div>
     </section>
 
-    <!-- ======================================================================
-         SECTION 3 — [ 02 ] OPTICAL LOG ENGINE & REAL-TIME OSCILLOSCOPE
-         (Interactive Draggable Spline Nodes + Split-Wipe on REAL app captures)
-         ====================================================================== -->
-    <section id="optical-math" class="relative z-20 mx-auto max-w-[1440px] px-4 sm:px-10 py-20 sm:py-36 hairline-t">
-      <!-- Header -->
+    <!-- SECTION 3 — [ 02 ] OPTICAL LOG ENGINE & REAL-TIME OSCILLOSCOPE -->
+    <section id="optical-math" class="relative z-20 mx-auto max-w-[1440px] px-4 sm:px-10 py-20 sm:py-32 hairline-t">
       <div class="scroll-reveal hairline-draw flex flex-col lg:flex-row lg:items-end justify-between gap-6 sm:gap-8 pb-10 sm:pb-14">
         <div>
-          <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-white/45 mb-3 sm:mb-4">
+          <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-white/60 mb-3 sm:mb-4">
             [ 02 · SAMSUNG LOG OPTICAL TRANSFER SCIENCE ]
           </div>
           <h2 class="text-3xl sm:text-6xl font-normal tracking-[-0.035em] leading-[1.02] text-white">
-            14 stops of latitude.<br />
-            <span class="font-serif italic text-white/65">Mathematically preserved.</span>
+            Scene-referred latitude.<br />
+            <span class="font-serif italic text-white/70">Mathematically preserved.</span>
           </h2>
         </div>
         <div class="flex flex-col items-start lg:items-end gap-2">
-          <span class="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-white/40">
+          <span class="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-white/60">
             SOURCE MODULE: color/SamsungLogColorScience.kt
           </span>
-          <code class="liquid-glass rounded-full px-3.5 sm:px-4 py-2 font-mono text-[11px] sm:text-xs text-white/85">
+          <code class="liquid-glass rounded-full px-3.5 sm:px-4 py-2 font-mono text-[11px] sm:text-xs text-white/90">
             y = 0.235 · ln(5.555x + 0.092) + 0.540
           </code>
         </div>
       </div>
 
-      <!-- Interactive Dual Laboratory Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-12 pt-10 sm:pt-12 gap-10 items-center">
-
-        <!-- Left (7 cols): Live 60fps HTML5 Canvas Transfer Curve & Waveform Oscilloscope -->
+        <!-- Interactive Canvas Oscilloscope -->
         <div class="lg:col-span-7 flex flex-col gap-5 sm:gap-6">
-          <div class="liquid-glass-strong rounded-3xl p-5 sm:p-8" data-tilt="0.025">
+          <div class="liquid-glass-strong rounded-3xl p-5 sm:p-8">
             <div class="flex flex-wrap items-center justify-between gap-3 pb-4 sm:pb-5 mb-5 sm:mb-6 hairline-b">
               <div>
-                <div class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
-                  INTERACTIVE SPLINE &amp; TRANSFER OSCILLOSCOPE (DRAG NODES)
+                <div class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">
+                  TRANSFER FUNCTION OSCILLOSCOPE (DRAG NODES)
                 </div>
                 <div id="lut-Readout-Title" class="mt-1 text-base sm:text-lg font-normal text-white">
                   01 · S24 Log → Rec.709 Base + Hermite Highlight Knee (≥ 0.80 IRE)
                 </div>
               </div>
-              <div class="flex items-center gap-2 font-mono text-[11px] text-white/60">
-                <span>DR:</span>
-                <span id="lut-dr-value" class="text-white">14.2 STOPS</span>
+              <div class="flex items-center gap-2 font-mono text-[11px] text-white/70">
+                <span>PROFILE:</span>
+                <span id="lut-dr-value" class="text-white">REC.709 BASE</span>
               </div>
             </div>
 
-            <!-- 60fps Monochrome Vector Canvas (Interactive Node Dragging!) -->
             <div
               data-cursor="SCULPT"
-              class="relative w-full h-[260px] sm:h-[340px] rounded-2xl bg-[#030303] border border-white/[0.07] overflow-hidden touch-none"
+              class="relative w-full h-[260px] sm:h-[340px] rounded-2xl bg-[#030303] border border-white/[0.08] overflow-hidden touch-none"
             >
-              <canvas id="transfer-canvas" class="w-full h-full block cursor-crosshair"></canvas>
-              <div class="pointer-events-none absolute top-3 left-3 sm:left-4 flex flex-wrap items-center gap-3 sm:gap-4 font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.16em] text-white/40">
+              <canvas id="transfer-canvas" class="w-full h-full block cursor-crosshair" aria-label="Interactive Log Transfer Curve Oscilloscope"></canvas>
+              <div class="pointer-events-none absolute top-3 left-3 sm:left-4 flex flex-wrap items-center gap-3 sm:gap-4 font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.16em] text-white/60" aria-hidden="true">
                 <span>── S24 LOG</span>
-                <span class="text-white/85">━━ GRADED SPLINE (DRAG POINTS)</span>
+                <span class="text-white">━━ OUTPUT SPLINE (DRAG)</span>
                 <span class="hidden sm:inline">┄┄ KNEE THRESHOLD</span>
               </div>
             </div>
 
-            <!-- Preset Switcher Pills + Exposure Scrub Slider -->
+            <!-- Presets & Slider -->
             <div class="mt-5 sm:mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Color Science Profile">
+              <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Transfer Presets">
                 <button
                   type="button"
                   onclick="setOpticalPreset(0)"
                   data-preset-btn="0"
-                  class="preset-pill rounded-full bg-white text-black px-3.5 py-1.5 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all"
+                  class="preset-pill rounded-full bg-white text-black px-3.5 py-2 min-h-[44px] font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all"
                 >
                   Rec.709 Base
                 </button>
@@ -1166,7 +1222,7 @@
                   type="button"
                   onclick="setOpticalPreset(1)"
                   data-preset-btn="1"
-                  class="preset-pill liquid-glass rounded-full text-white/70 hover:text-white px-3.5 py-1.5 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all"
+                  class="preset-pill liquid-glass rounded-full text-white/80 hover:text-white px-3.5 py-2 min-h-[44px] font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all"
                 >
                   Fuji Classic Neg
                 </button>
@@ -1174,7 +1230,7 @@
                   type="button"
                   onclick="setOpticalPreset(2)"
                   data-preset-btn="2"
-                  class="preset-pill liquid-glass rounded-full text-white/70 hover:text-white px-3.5 py-1.5 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all"
+                  class="preset-pill liquid-glass rounded-full text-white/80 hover:text-white px-3.5 py-2 min-h-[44px] font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all"
                 >
                   Kodak 2383 Print
                 </button>
@@ -1182,15 +1238,14 @@
                   type="button"
                   onclick="setOpticalPreset(3)"
                   data-preset-btn="3"
-                  class="preset-pill liquid-glass rounded-full text-white/70 hover:text-white px-3.5 py-1.5 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all"
+                  class="preset-pill liquid-glass rounded-full text-white/80 hover:text-white px-3.5 py-2 min-h-[44px] font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all"
                 >
                   ACROS Mono
                 </button>
               </div>
 
-              <!-- Highlight Roll-off Knee Control -->
-              <div class="flex items-center justify-between sm:justify-end gap-3">
-                <label for="knee-slider" class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">
+              <div class="flex items-center justify-between sm:justify-end gap-3 min-h-[44px]">
+                <label for="knee-slider" class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60">
                   HIGHLIGHT KNEE
                 </label>
                 <input
@@ -1201,114 +1256,119 @@
                   value="80"
                   class="w-28 accent-white cursor-pointer"
                 />
-                <span id="knee-label" class="font-mono text-xs text-white/80 w-10 text-right">0.80</span>
+                <span id="knee-label" class="font-mono text-xs text-white/90 w-10 text-right">0.80</span>
               </div>
             </div>
           </div>
 
-          <!-- 3 Mathematical Pillar Micro-Cards -->
+          <!-- 3 Mathematical Stages -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="scroll-reveal liquid-glass rounded-2xl p-5" data-tilt="0.06">
-              <div class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">STAGE 01 · DE-LOG</div>
-              <div class="mt-2 text-base font-medium text-white">Inverse Log Linearization</div>
-              <p class="mt-1.5 text-xs text-white/50 leading-relaxed">
-                Exact analytical inverse of the S24 Ultra 10-bit HEVC transfer curve restores scene-referred linear light before CDL grading.
+            <div class="scroll-reveal liquid-glass rounded-2xl p-5">
+              <div class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">STAGE 01 · DE-LOG</div>
+              <div class="mt-2 text-base font-medium text-white">Log Linearization</div>
+              <p class="mt-1.5 text-xs text-white/70 leading-relaxed">
+                Exact inverse equation restores linear scene values prior to CDL grading.
               </p>
             </div>
-            <div class="scroll-reveal liquid-glass rounded-2xl p-5" data-tilt="0.06" style="transition-delay: 80ms;">
-              <div class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">STAGE 02 · GAMUT</div>
-              <div class="mt-2 text-base font-medium text-white">BT.2020 → Rec.709 Matrix</div>
-              <p class="mt-1.5 text-xs text-white/50 leading-relaxed">
-                3×3 chromatic adaptation matrix maps wide-gamut Samsung sensor primaries into Rec.709 without out-of-gamut neon clipping.
+            <div class="scroll-reveal liquid-glass rounded-2xl p-5" style="transition-delay: 80ms;">
+              <div class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">STAGE 02 · GAMUT</div>
+              <div class="mt-2 text-base font-medium text-white">Rec.709 Gamut Mapping</div>
+              <p class="mt-1.5 text-xs text-white/70 leading-relaxed">
+                Direct chromatic mapping compresses wide sensor primaries without harsh clipping.
               </p>
             </div>
-            <div class="scroll-reveal liquid-glass rounded-2xl p-5" data-tilt="0.06" style="transition-delay: 160ms;">
-              <div class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">STAGE 03 · ROLL-OFF</div>
-              <div class="mt-2 text-base font-medium text-white">Hermite Shoulder Compression</div>
-              <p class="mt-1.5 text-xs text-white/50 leading-relaxed">
-                Cubic Hermite spline above 0.80 IRE smoothly compresses specular highlights to emulate celluloid shoulder density.
+            <div class="scroll-reveal liquid-glass rounded-2xl p-5" style="transition-delay: 160ms;">
+              <div class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">STAGE 03 · ROLL-OFF</div>
+              <div class="mt-2 text-base font-medium text-white">Hermite Compression</div>
+              <p class="mt-1.5 text-xs text-white/70 leading-relaxed">
+                Cubic Hermite knee above 0.80 IRE smoothly rolls specular highlights into film shoulder.
               </p>
             </div>
           </div>
         </div>
 
-        <!-- Right (5 cols): Interactive rAF Split-Screen Wipe Comparator on Real App Captures -->
+        <!-- Split-Screen Wipe Comparator -->
         <div class="lg:col-span-5 flex flex-col items-center">
           <div class="w-full max-w-[330px] sm:max-w-[360px]">
-            <div class="mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
-              <span>[ DRAG TO COMPARE ROOM STATES ]</span>
+            <div class="mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">
+              <span>[ DRAG TO COMPARE STATES ]</span>
               <span id="wipe-readout">50% SPLIT</span>
             </div>
 
-            <!-- Interactive Split-Screen Hardware Frame -->
             <div
               id="compare-container"
               data-cursor="DRAG"
               class="device-frame relative select-none cursor-ew-resize overflow-hidden touch-none"
             >
-              <!-- Base Layer (Right Side): Monotonic Curves + RGB Parade (app-curves-parade.png) -->
-              <img
-                id="compare-img-right"
-                src="public/screenshots/app-curves-parade.png"
-                alt="ResolveStudio Graded State with RGB Waveform Parade"
-                width="824"
-                height="1830"
-                class="block w-full h-auto rounded-[18px] pointer-events-none"
-              />
+              <picture>
+                <source type="image/avif" srcset="screenshots/app-curves-parade.avif" />
+                <source type="image/webp" srcset="screenshots/app-curves-parade.webp" />
+                <img
+                  id="compare-img-right"
+                  src="screenshots/app-curves-parade.png"
+                  alt="Graded Curves State with RGB Parade"
+                  width="824"
+                  height="1830"
+                  loading="lazy"
+                  decoding="async"
+                  class="block w-full h-auto rounded-[18px] pointer-events-none"
+                />
+              </picture>
 
-              <!-- Clipped Overlay Layer (Left Side): Primary Wheels + Histogram (app-wheels-scopes.png) -->
               <div
                 id="compare-clip"
                 class="absolute inset-[7px] overflow-hidden rounded-[18px] pointer-events-none"
                 style="clip-path: inset(0 50% 0 0);"
               >
-                <img
-                  id="compare-img-left"
-                  src="public/screenshots/app-wheels-scopes.png"
-                  alt="ResolveStudio Primary Wheels State"
-                  width="824"
-                  height="1830"
-                  class="block w-full h-full object-cover"
-                />
+                <picture>
+                  <source type="image/avif" srcset="screenshots/app-wheels-scopes.avif" />
+                  <source type="image/webp" srcset="screenshots/app-wheels-scopes.webp" />
+                  <img
+                    id="compare-img-left"
+                    src="screenshots/app-wheels-scopes.png"
+                    alt="Primary Wheels State with Histogram"
+                    width="824"
+                    height="1830"
+                    loading="lazy"
+                    decoding="async"
+                    class="block w-full h-full object-cover"
+                  />
+                </picture>
               </div>
 
-              <!-- Vertical Split Hairline + Liquid Glass Handle -->
               <div
                 id="compare-divider"
                 class="pointer-events-none absolute inset-y-[7px] w-px bg-white/80 shadow-[0_0_20px_rgba(255,255,255,0.9)]"
                 style="left: 50%;"
               >
-                <div class="liquid-glass-strong absolute top-1/2 -left-5 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full text-white">
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <div class="liquid-glass-strong absolute top-1/2 -left-5 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full text-white" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <path d="M5 4L1.5 8L5 12M11 4L14.5 8L11 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div class="mt-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">
+            <div class="mt-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.16em] text-white/60">
               <span>← WHEELS + HISTOGRAM</span>
-              <span>SPLINES + RGB PARADE →</span>
+              <span>SPLINES + PARADE →</span>
             </div>
           </div>
         </div>
-
       </div>
     </section>
 
-    <!-- ======================================================================
-         SECTION 4 — [ 03 ] CAPTURE ARCHIVE (Velocity-Skewed Horizontal Filmstrip)
-         ====================================================================== -->
-    <section id="archive" class="relative z-20 py-20 sm:py-36 hairline-t overflow-hidden">
+    <!-- SECTION 4 — [ 03 ] CAPTURE ARCHIVE -->
+    <section id="archive" class="relative z-20 py-20 sm:py-32 hairline-t overflow-hidden">
       <div class="mx-auto max-w-[1440px] px-4 sm:px-10 mb-10 sm:mb-14">
         <div class="scroll-reveal flex flex-col sm:flex-row sm:items-end justify-between gap-6">
           <div>
-            <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-white/45 mb-3 sm:mb-4">
-              [ 03 · NATIVE TELEMETRY &amp; CAPTURE ARCHIVE ]
+            <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-white/60 mb-3 sm:mb-4">
+              [ 03 · NATIVE TELEMETRY ARCHIVE ]
             </div>
             <h2 class="text-3xl sm:text-6xl font-normal tracking-[-0.035em] leading-[1.02] text-white">
               Every pixel verified on<br />
-              <span class="font-serif italic text-white/65">actual studio builds.</span>
+              <span class="font-serif italic text-white/70">actual studio builds.</span>
             </h2>
           </div>
           <div class="flex items-center gap-3">
@@ -1317,7 +1377,7 @@
               onclick="nudgeFilmstrip(-1)"
               data-magnetic="0.3"
               aria-label="Scroll Filmstrip Left"
-              class="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 hover:text-white transition-transform active:scale-95"
+              class="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 hover:text-white transition-transform active:scale-95 focus-visible:ring-1 focus-visible:ring-white"
             >
               ←
             </button>
@@ -1326,7 +1386,7 @@
               onclick="nudgeFilmstrip(1)"
               data-magnetic="0.3"
               aria-label="Scroll Filmstrip Right"
-              class="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 hover:text-white transition-transform active:scale-95"
+              class="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 hover:text-white transition-transform active:scale-95 focus-visible:ring-1 focus-visible:ring-white"
             >
               →
             </button>
@@ -1334,340 +1394,367 @@
         </div>
       </div>
 
-      <!-- Horizontal Filmstrip Track with Velocity Skew -->
+      <!-- Snap-Scrolling Filmstrip Cards (Accessible Buttons) -->
       <div
         id="filmstrip-scroller"
         class="no-scrollbar flex items-stretch gap-5 sm:gap-7 overflow-x-auto px-4 sm:px-10 pb-6 scroll-smooth snap-x snap-mandatory"
       >
         <!-- Plate 01 -->
-        <article
+        <button
+          type="button"
           data-cursor="INSPECT"
-          data-tilt="0.03"
-          onclick="openLightbox('public/screenshots/app-landscape-studio.png', 'PLATE 01 · Adaptive Landscape Split-Monitor Workstation (1760×1040)')"
-          class="filmstrip-card snap-center liquid-glass shrink-0 w-[85vw] sm:w-[620px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform"
+          onclick="openLightbox('screenshots/app-landscape-studio.png', 'PLATE 01 · Landscape Split-Monitor Workstation (1760×1040)')"
+          aria-label="Inspect Plate 01: Landscape Split-Monitor Workstation"
+          class="filmstrip-card snap-center liquid-glass shrink-0 w-[85vw] sm:w-[620px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform text-left border-0 focus-visible:ring-2 focus-visible:ring-white"
         >
-          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/45 mb-4">
-            <span>PLATE 01 // WORKSTATION POSTURE</span>
+          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/60 mb-4 w-full">
+            <span>PLATE 01 // WORKSTATION</span>
             <span>1760 × 1040 PX</span>
           </div>
-          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08] my-auto">
-            <img
-              src="public/screenshots/app-landscape-studio.png"
-              alt="Adaptive Landscape Split-Monitor Workstation"
-              width="1760"
-              height="1040"
-              class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-            />
+          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08] my-auto w-full">
+            <picture>
+              <source type="image/avif" srcset="screenshots/app-landscape-studio.avif" />
+              <source type="image/webp" srcset="screenshots/app-landscape-studio.webp" />
+              <img
+                src="screenshots/app-landscape-studio.png"
+                alt="Landscape Split-Monitor Workstation"
+                width="1760"
+                height="1040"
+                loading="lazy"
+                decoding="async"
+                class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+              />
+            </picture>
           </div>
-          <div class="mt-5 flex items-center justify-between pt-4 hairline-t">
+          <div class="mt-5 flex items-center justify-between pt-4 hairline-t w-full">
             <div>
               <h3 class="text-base font-medium text-white">Dual-Monitor Landscape Deck</h3>
-              <p class="text-xs text-white/50 mt-0.5">Simultaneous 16:9 viewport, RGB Parade scope, and 4-way wheels.</p>
+              <p class="text-xs text-white/70 mt-0.5">Simultaneous 16:9 viewport, RGB Parade scope, and 4-way wheels.</p>
             </div>
-            <span class="font-mono text-xs text-white/50 group-hover:text-white">↗</span>
+            <span class="font-mono text-xs text-white/60 group-hover:text-white" aria-hidden="true">↗</span>
           </div>
-        </article>
+        </button>
 
         <!-- Plate 02 -->
-        <article
+        <button
+          type="button"
           data-cursor="INSPECT"
-          data-tilt="0.04"
-          onclick="openLightbox('public/screenshots/app-wheels-scopes.png', 'PLATE 02 · Primary 3-Way Color Wheels & Realtime Histogram (824×1830)')"
-          class="filmstrip-card snap-center liquid-glass shrink-0 w-[78vw] sm:w-[340px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform"
+          onclick="openLightbox('screenshots/app-wheels-scopes.png', 'PLATE 02 · Primary 3-Way Wheels & Realtime Histogram (824×1830)')"
+          aria-label="Inspect Plate 02: Primary 3-Way Wheels"
+          class="filmstrip-card snap-center liquid-glass shrink-0 w-[78vw] sm:w-[340px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform text-left border-0 focus-visible:ring-2 focus-visible:ring-white"
         >
-          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/45 mb-4">
+          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/60 mb-4 w-full">
             <span>PLATE 02 // WHEELS</span>
             <span>824 × 1830 PX</span>
           </div>
-          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08]">
-            <img
-              src="public/screenshots/app-wheels-scopes.png"
-              alt="Primary 3-Way Color Wheels and Realtime Histogram"
-              width="824"
-              height="1830"
-              class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-            />
+          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08] w-full">
+            <picture>
+              <source type="image/avif" srcset="screenshots/app-wheels-scopes.avif" />
+              <source type="image/webp" srcset="screenshots/app-wheels-scopes.webp" />
+              <img
+                src="screenshots/app-wheels-scopes.png"
+                alt="Primary 3-Way Color Wheels and Realtime Histogram"
+                width="824"
+                height="1830"
+                loading="lazy"
+                decoding="async"
+                class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+              />
+            </picture>
           </div>
-          <div class="mt-5 flex items-center justify-between pt-4 hairline-t">
+          <div class="mt-5 flex items-center justify-between pt-4 hairline-t w-full">
             <div>
               <h3 class="text-base font-medium text-white">Lift / Gamma / Gain / Offset</h3>
-              <p class="text-xs text-white/50 mt-0.5">S24 Sunset Portrait with floating RGB Histogram.</p>
+              <p class="text-xs text-white/70 mt-0.5">S24 Sunset Portrait with floating RGB Histogram.</p>
             </div>
-            <span class="font-mono text-xs text-white/50 group-hover:text-white">↗</span>
+            <span class="font-mono text-xs text-white/60 group-hover:text-white" aria-hidden="true">↗</span>
           </div>
-        </article>
+        </button>
 
         <!-- Plate 03 -->
-        <article
+        <button
+          type="button"
           data-cursor="INSPECT"
-          data-tilt="0.04"
-          onclick="openLightbox('public/screenshots/app-curves-parade.png', 'PLATE 03 · Monotonic Spline Curves & Docked RGB Parade (824×1830)')"
-          class="filmstrip-card snap-center liquid-glass shrink-0 w-[78vw] sm:w-[340px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform"
+          onclick="openLightbox('screenshots/app-curves-parade.png', 'PLATE 03 · Monotonic Splines & RGB Parade (824×1830)')"
+          aria-label="Inspect Plate 03: Monotonic Spline Curves"
+          class="filmstrip-card snap-center liquid-glass shrink-0 w-[78vw] sm:w-[340px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform text-left border-0 focus-visible:ring-2 focus-visible:ring-white"
         >
-          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/45 mb-4">
+          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/60 mb-4 w-full">
             <span>PLATE 03 // SPLINES</span>
             <span>824 × 1830 PX</span>
           </div>
-          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08]">
-            <img
-              src="public/screenshots/app-curves-parade.png"
-              alt="Monotonic Cubic Spline Curves and Docked RGB Parade"
-              width="824"
-              height="1830"
-              class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-            />
+          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08] w-full">
+            <picture>
+              <source type="image/avif" srcset="screenshots/app-curves-parade.avif" />
+              <source type="image/webp" srcset="screenshots/app-curves-parade.webp" />
+              <img
+                src="screenshots/app-curves-parade.png"
+                alt="Monotonic Spline Curves and Parade"
+                width="824"
+                height="1830"
+                loading="lazy"
+                decoding="async"
+                class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+              />
+            </picture>
           </div>
-          <div class="mt-5 flex items-center justify-between pt-4 hairline-t">
+          <div class="mt-5 flex items-center justify-between pt-4 hairline-t w-full">
             <div>
               <h3 class="text-base font-medium text-white">Spline Curves + Parade</h3>
-              <p class="text-xs text-white/50 mt-0.5">S24 Tokyo Cyber Neon in Scope + Tool split view.</p>
+              <p class="text-xs text-white/70 mt-0.5">S24 Tokyo Cyber Neon in Scope + Tool split view.</p>
             </div>
-            <span class="font-mono text-xs text-white/50 group-hover:text-white">↗</span>
+            <span class="font-mono text-xs text-white/60 group-hover:text-white" aria-hidden="true">↗</span>
           </div>
-        </article>
+        </button>
 
         <!-- Plate 04 -->
-        <article
+        <button
+          type="button"
           data-cursor="INSPECT"
-          data-tilt="0.04"
-          onclick="openLightbox('public/screenshots/app-luts-browser.png', 'PLATE 04 · 33³ Tetrahedral 3D LUT Browser & Intensity Mixer (824×1830)')"
-          class="filmstrip-card snap-center liquid-glass shrink-0 w-[78vw] sm:w-[340px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform"
+          onclick="openLightbox('screenshots/app-luts-browser.png', 'PLATE 04 · 3D LUT Browser & Intensity Mixer (824×1830)')"
+          aria-label="Inspect Plate 04: 3D LUT Browser"
+          class="filmstrip-card snap-center liquid-glass shrink-0 w-[78vw] sm:w-[340px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform text-left border-0 focus-visible:ring-2 focus-visible:ring-white"
         >
-          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/45 mb-4">
-            <span>PLATE 04 // 3D LUT VAULT</span>
+          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/60 mb-4 w-full">
+            <span>PLATE 04 // 3D LUTS</span>
             <span>824 × 1830 PX</span>
           </div>
-          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08]">
-            <img
-              src="public/screenshots/app-luts-browser.png"
-              alt="3D LUT Manager and Intensity Slider"
-              width="824"
-              height="1830"
-              class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-            />
+          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08] w-full">
+            <picture>
+              <source type="image/avif" srcset="screenshots/app-luts-browser.avif" />
+              <source type="image/webp" srcset="screenshots/app-luts-browser.webp" />
+              <img
+                src="screenshots/app-luts-browser.png"
+                alt="3D LUT Manager and Intensity Slider"
+                width="824"
+                height="1830"
+                loading="lazy"
+                decoding="async"
+                class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+              />
+            </picture>
           </div>
-          <div class="mt-5 flex items-center justify-between pt-4 hairline-t">
+          <div class="mt-5 flex items-center justify-between pt-4 hairline-t w-full">
             <div>
-              <h3 class="text-base font-medium text-white">33³ Film Emulation Vault</h3>
-              <p class="text-xs text-white/50 mt-0.5">S24 Alpine Lake with 92% Fujifilm Classic Neg blend.</p>
+              <h3 class="text-base font-medium text-white">3D Film Recipe Vault</h3>
+              <p class="text-xs text-white/70 mt-0.5">S24 Alpine Lake with 92% Fujifilm Classic Neg blend.</p>
             </div>
-            <span class="font-mono text-xs text-white/50 group-hover:text-white">↗</span>
+            <span class="font-mono text-xs text-white/60 group-hover:text-white" aria-hidden="true">↗</span>
           </div>
-        </article>
+        </button>
 
         <!-- Plate 05 -->
-        <article
+        <button
+          type="button"
           data-cursor="INSPECT"
-          data-tilt="0.04"
-          onclick="openLightbox('public/screenshots/app-power-window.png', 'PLATE 05 · Elliptical Power Window Mask & Feather Ring (824×1830)')"
-          class="filmstrip-card snap-center liquid-glass shrink-0 w-[78vw] sm:w-[340px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform"
+          onclick="openLightbox('screenshots/app-power-window.png', 'PLATE 05 · Elliptical Power Window Qualifier (824×1830)')"
+          aria-label="Inspect Plate 05: Elliptical Power Window"
+          class="filmstrip-card snap-center liquid-glass shrink-0 w-[78vw] sm:w-[340px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform text-left border-0 focus-visible:ring-2 focus-visible:ring-white"
         >
-          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/45 mb-4">
+          <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/60 mb-4 w-full">
             <span>PLATE 05 // POWER WINDOW</span>
             <span>824 × 1830 PX</span>
           </div>
-          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08]">
-            <img
-              src="public/screenshots/app-power-window.png"
-              alt="Interactive Elliptical Power Window Qualifier"
-              width="824"
-              height="1830"
-              class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-            />
+          <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08] w-full">
+            <picture>
+              <source type="image/avif" srcset="screenshots/app-power-window.avif" />
+              <source type="image/webp" srcset="screenshots/app-power-window.webp" />
+              <img
+                src="screenshots/app-power-window.png"
+                alt="Interactive Elliptical Power Window Qualifier"
+                width="824"
+                height="1830"
+                loading="lazy"
+                decoding="async"
+                class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+              />
+            </picture>
           </div>
-          <div class="mt-5 flex items-center justify-between pt-4 hairline-t">
+          <div class="mt-5 flex items-center justify-between pt-4 hairline-t w-full">
             <div>
               <h3 class="text-base font-medium text-white">Spatial Power Window</h3>
-              <p class="text-xs text-white/50 mt-0.5">S24 Film Noir Studio with elliptical feather ring.</p>
+              <p class="text-xs text-white/70 mt-0.5">S24 Film Noir Studio with elliptical feather ring.</p>
             </div>
-            <span class="font-mono text-xs text-white/50 group-hover:text-white">↗</span>
+            <span class="font-mono text-xs text-white/60 group-hover:text-white" aria-hidden="true">↗</span>
           </div>
-        </article>
+        </button>
       </div>
     </section>
 
-    <!-- ======================================================================
-         SECTION 5 — [ 04 ] THE DARKROOM MANIFESTO & ARCHITECTURAL SPECS
-         (Motionsites mindloop-landing.md Video #29 + Scroll Word Opacity + Count-Up)
-         ====================================================================== -->
-    <section id="manifesto" class="relative z-20 mx-auto max-w-[1440px] px-4 sm:px-10 py-24 sm:py-40 hairline-t">
+    <!-- SECTION 5 — [ 04 ] THE DARKROOM MANIFESTO & VERIFIED SPECS -->
+    <section id="manifesto" class="relative z-20 mx-auto max-w-[1440px] px-4 sm:px-10 py-24 sm:py-36 hairline-t">
       <div class="relative flex flex-col items-center justify-center text-center">
-
-        <!-- Central Monochrome Sculpture Video (#29 from Motionsites MEDIA.md) -->
-        <div class="pointer-events-none relative mx-auto mb-8 sm:mb-10 h-[240px] w-[240px] sm:h-[380px] sm:w-[380px] flex items-center justify-center">
+        <!-- Lazy-Loaded Sculpture Video -->
+        <div class="pointer-events-none relative mx-auto mb-8 sm:mb-10 h-[220px] w-[220px] sm:h-[340px] sm:w-[340px] flex items-center justify-center" aria-hidden="true">
           <video
             class="fading-video h-full w-full object-contain grayscale contrast-125"
             style="opacity: 0; mix-blend-mode: screen;"
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_132944_a0d124bb-eaa1-4082-aa30-2310efb42b4b.mp4"
-            autoplay
+            data-src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_132944_a0d124bb-eaa1-4082-aa30-2310efb42b4b.mp4"
             muted
             playsinline
-            preload="auto"
+            preload="none"
           ></video>
           <div class="absolute inset-0 bg-[radial-gradient(circle,transparent_30%,#000000_75%)]"></div>
         </div>
 
-        <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-white/45 mb-6 sm:mb-8">
+        <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-white/60 mb-6 sm:mb-8">
           [ 04 · THE DARKROOM PRINCIPLE ]
         </div>
 
-        <!-- Scroll-Scrubbed Word-by-Word Opacity Manifesto -->
+        <!-- Scroll-Scrubbed Manifesto with Accessible Floor Opacity (0.45) -->
         <p
           id="manifesto-text"
           class="mx-auto max-w-4xl text-2xl sm:text-5xl lg:text-[3.35rem] font-normal tracking-[-0.03em] leading-[1.18] sm:leading-[1.15] text-white px-2"
         >
-          Professional colorists work in pitch-black rooms so nothing biases the eye. We stripped away every decorative gradient and consumer filter—leaving only calibrated scopes, 32-bit floating-point shader math, and your raw 10-bit negative.
+          Professional colorists work in pitch-black rooms so nothing biases the eye. We stripped away decorative gradients and consumer filters—leaving only calibrated scopes, precision transfer math, and your raw negative.
         </p>
       </div>
 
-      <!-- 4-Column Architectural Spec Matrix (Weight-300 Giant Count-Up Numerals) -->
+      <!-- 4 Verified Spec Pillars -->
       <div class="mt-20 sm:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-y border-white/[0.08] divide-y sm:divide-y-0 sm:divide-x divide-white/[0.08]">
         <div class="scroll-reveal p-7 sm:p-10 flex flex-col justify-between">
-          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">01 // BIT DEPTH</span>
+          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">01 // COLOR SCIENCE</span>
           <div class="my-6 sm:my-8 text-5xl sm:text-6xl font-light tracking-[-0.04em] text-white">
-            <span class="count-num" data-target="10">10</span><span class="font-serif italic text-white/60">-bit</span>
+            Log<span class="font-serif italic text-white/70"> curve</span>
           </div>
-          <p class="text-xs text-white/50 leading-relaxed">
-            1,024 tonal code values per RGB channel decoded via Android `MediaCodec` P010 hardware surfaces.
+          <p class="text-xs text-white/70 leading-relaxed">
+            Analytical inverse logarithmic decompression linearizes S24 Log footage prior to tone mapping.
           </p>
         </div>
 
         <div class="scroll-reveal p-7 sm:p-10 flex flex-col justify-between" style="transition-delay: 80ms;">
-          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">02 // CUBE PRECISION</span>
+          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">02 // CUBE EXPORT</span>
           <div class="my-6 sm:my-8 text-5xl sm:text-6xl font-light tracking-[-0.04em] text-white">
-            <span class="count-num" data-target="33">33</span><sup class="font-serif italic text-3xl text-white/60">3</sup>
+            <span class="count-num" data-target="33">33</span><sup class="font-serif italic text-3xl text-white/70">3</sup>
           </div>
-          <p class="text-xs text-white/50 leading-relaxed">
-            35,937 lattice nodes interpolated via diagonal tetrahedral decomposition inside `ColorGradingShader.kt`.
+          <p class="text-xs text-white/70 leading-relaxed">
+            Standard 33³ .cube file generation with 35,937 lattice nodes for universal NLE compatibility.
           </p>
         </div>
 
         <div class="scroll-reveal p-7 sm:p-10 flex flex-col justify-between" style="transition-delay: 160ms;">
-          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">03 // FILM EMULATIONS</span>
+          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">03 // FILM RECIPES</span>
           <div class="my-6 sm:my-8 text-5xl sm:text-6xl font-light tracking-[-0.04em] text-white">
-            <span class="count-num" data-target="7" data-pad="2">07</span><span class="font-serif italic text-3xl text-white/60"> stocks</span>
+            LUT<span class="font-serif italic text-3xl text-white/70"> vault</span>
           </div>
-          <p class="text-xs text-white/50 leading-relaxed">
-            Procedural Fujifilm &amp; Kodak print emulations generated at runtime in `FilmEmulationPresets.kt`.
+          <p class="text-xs text-white/70 leading-relaxed">
+            Classic Neg, Kodak 2383, Eterna 250D, and ACROS recipes with real-time intensity modulation.
           </p>
         </div>
 
         <div class="scroll-reveal p-7 sm:p-10 flex flex-col justify-between" style="transition-delay: 240ms;">
-          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">04 // EXPORT ENGINE</span>
+          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">04 // EXPORT ENGINE</span>
           <div class="my-6 sm:my-8 text-5xl sm:text-6xl font-light tracking-[-0.04em] text-white">
-            4K<span class="font-serif italic text-white/60"><span class="count-num" data-target="60">60</span></span>
+            4K<span class="font-serif italic text-white/70"> UHD</span>
           </div>
-          <p class="text-xs text-white/50 leading-relaxed">
-            Zero-copy Media3 `Transformer` pipeline encoding graded frames back to 10-bit HEVC or Rec.709 H.264.
+          <p class="text-xs text-white/70 leading-relaxed">
+            Hardware-accelerated MediaCodec and MediaMuxer rendering to 4K UHD or 1080p MP4.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- ======================================================================
-         SECTION 6 — WIDE 3:1 VIDEO CTA SHEET & FOOTER
-         ====================================================================== -->
+    <!-- SECTION 6 — WIDE 3:1 CTA SHEET & FOOTER -->
     <section id="download" class="relative z-20 mx-auto max-w-[1440px] px-4 sm:px-10 pb-20 sm:pb-24">
       <div
-        data-tilt="0.02"
         class="scroll-reveal liquid-glass-strong relative overflow-hidden rounded-[28px] sm:rounded-[32px] min-h-[340px] sm:aspect-[3/1] flex flex-col items-center justify-center text-center p-6 sm:p-16"
       >
-        <!-- Wide 3:1 Monochrome Video (#30 from Motionsites MEDIA.md) -->
+        <!-- Lazy-Loaded Wide Video -->
         <video
           class="fading-video pointer-events-none absolute inset-0 h-full w-full object-cover grayscale contrast-125"
           style="opacity: 0; mix-blend-mode: screen;"
-          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4"
-          autoplay
+          data-src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4"
           muted
           playsinline
-          preload="auto"
+          preload="none"
         ></video>
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/75"></div>
 
         <div class="relative z-10 max-w-2xl flex flex-col items-center">
-          <span class="font-mono text-[10px] uppercase tracking-[0.24em] text-white/55 mb-3 sm:mb-4">
+          <span class="font-mono text-[10px] uppercase tracking-[0.24em] text-white/70 mb-3 sm:mb-4">
             [ READY FOR GALAXY S24 ULTRA · ANDROID 14+ ]
           </span>
           <h2 class="text-3xl sm:text-6xl lg:text-7xl font-normal tracking-[-0.04em] leading-[0.98] text-white">
-            Grade the <span class="font-serif italic text-white/70">raw light.</span>
+            Grade the <span class="font-serif italic text-white/75">raw light.</span>
           </h2>
-          <p class="mt-3 sm:mt-4 text-xs sm:text-base text-white/60 max-w-[46ch]">
-            Build directly from source with `./gradlew assembleDebug` or inspect the OpenGL ES 3.0 shader pipeline.
+          <p class="mt-3 sm:mt-4 text-xs sm:text-base text-white/70 max-w-[46ch]">
+            Download the initial Android release (v1.0.0) or clone the open-source repository.
           </p>
 
           <div class="mt-7 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-3.5 w-full sm:w-auto">
             <a
-              href="#rooms"
-              data-cursor="EXPLORE"
+              href="https://github.com/shahabzolfaghari/resolve-studio/releases/download/v1.0.0/ResolveStudio-debug.apk"
+              download
+              data-cursor="DOWNLOAD"
               data-magnetic="0.25"
-              class="w-full sm:w-auto justify-between sm:justify-center group inline-flex items-center gap-3 rounded-full bg-white pl-6 pr-2 py-2 text-sm font-medium text-black transition-transform duration-300 hover:scale-[1.03]"
+              class="w-full sm:w-auto min-h-[44px] justify-between sm:justify-center group inline-flex items-center gap-3 rounded-full bg-white pl-6 pr-2 py-2 text-sm font-medium text-black transition-transform duration-300 hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-white"
             >
-              <span>Inspect Studio Captures</span>
-              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition-transform duration-300 group-hover:-rotate-45">
-                <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <span>Download Studio APK (v1.0.0)</span>
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition-transform duration-300 group-hover:-rotate-45" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
                   <path d="M2.5 9.5L9.5 2.5M9.5 2.5H3.5M9.5 2.5V8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
             </a>
-            <div class="w-full sm:w-auto liquid-glass rounded-full px-5 py-3 font-mono text-xs text-white/80 select-all">
-              ./gradlew :app:assembleDebug
+            <div class="w-full sm:w-auto min-h-[44px] liquid-glass rounded-full px-5 py-3 font-mono text-xs text-white/90 select-all flex items-center justify-center">
+              git clone https://github.com/shahabzolfaghari/resolve-studio.git
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Minimal Architectural Footer -->
-      <footer class="mt-14 sm:mt-16 pt-8 hairline-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-white/40">
+      <footer class="mt-14 sm:mt-16 pt-8 hairline-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-white/60">
         <div class="flex items-center gap-3">
-          <span class="font-serif italic text-base lowercase text-white/80">r</span>
+          <span class="font-serif italic text-base lowercase text-white/90">r</span>
           <span>RESOLVESTUDIO™ · SAMSUNG LOG COLOR SUITE</span>
         </div>
         <div class="flex flex-wrap items-center gap-5 sm:gap-6">
-          <a href="#rooms" class="hover:text-white transition-colors">ROOMS</a>
-          <a href="#optical-math" class="hover:text-white transition-colors">LOG ENGINE</a>
-          <a href="#archive" class="hover:text-white transition-colors">PLATES</a>
-          <a href="#manifesto" class="hover:text-white transition-colors">SPECS</a>
+          <a href="#rooms" class="hover:text-white transition-colors focus-visible:ring-1 focus-visible:ring-white rounded">ROOMS</a>
+          <a href="#optical-math" class="hover:text-white transition-colors focus-visible:ring-1 focus-visible:ring-white rounded">LOG ENGINE</a>
+          <a href="#archive" class="hover:text-white transition-colors focus-visible:ring-1 focus-visible:ring-white rounded">PLATES</a>
+          <a href="#manifesto" class="hover:text-white transition-colors focus-visible:ring-1 focus-visible:ring-white rounded">SPECS</a>
         </div>
         <div>© 2026 RESOLVESTUDIO ARCHIVE</div>
       </footer>
     </section>
   </main>
 
-  <!-- ========================================================================
-       FULL-RESOLUTION LIGHTBOX MODAL FOR REAL APP SCREENSHOTS
-       ======================================================================== -->
-  <div
-    id="lightbox-modal"
-    onclick="closeLightbox()"
-    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90 backdrop-blur-2xl p-4 sm:p-10 cursor-zoom-out"
+  <!-- ACCESSIBLE FULL-RESOLUTION LIGHTBOX DIALOG -->
+  <dialog
+    id="lightbox-dialog"
+    class="m-auto rounded-3xl bg-transparent p-4 sm:p-10 border-0 outline-none text-white max-w-5xl w-full"
+    aria-labelledby="lightbox-caption"
   >
-    <div class="relative max-h-[92vh] max-w-5xl flex flex-col items-center" onclick="event.stopPropagation()">
+    <div class="relative max-h-[92vh] w-full flex flex-col items-center">
       <div class="w-full flex items-center justify-between pb-3 mb-3 hairline-b gap-4">
-        <span id="lightbox-caption" class="font-mono text-[11px] sm:text-xs uppercase tracking-[0.18em] text-white/75 truncate"></span>
+        <span id="lightbox-caption" class="font-mono text-[11px] sm:text-xs uppercase tracking-[0.18em] text-white/90 truncate"></span>
         <button
           type="button"
           onclick="closeLightbox()"
-          class="liquid-glass shrink-0 rounded-full px-3.5 py-1 font-mono text-xs text-white/80 hover:text-white"
+          aria-label="Close modal dialog"
+          class="liquid-glass shrink-0 rounded-full px-4 py-2 min-h-[44px] font-mono text-xs text-white/90 hover:text-white focus-visible:ring-2 focus-visible:ring-white"
         >
           ESC ✕
         </button>
       </div>
       <img
         id="lightbox-img"
-        src="public/screenshots/app-landscape-studio.png"
-        alt="Full resolution ResolveStudio capture"
-        class="max-h-[82vh] w-auto rounded-2xl border border-white/15 shadow-2xl object-contain"
+        src="screenshots/app-landscape-studio.png"
+        alt="Full resolution capture"
+        class="max-h-[80vh] w-auto rounded-2xl border border-white/20 shadow-2xl object-contain"
       />
     </div>
-  </div>
+  </dialog>
 
-  <!-- ========================================================================
-       SUPER-FLUID 60FPS MOTION ENGINE
-       ======================================================================== -->
+  <!-- EFFICIENT INTERSECTION-BASED SCRIPT ENGINE -->
   <script>
-    /* ------------------------------------------------------------------------
-       0. MOBILE DRAWER NAVIGATION
-       ------------------------------------------------------------------------ */
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let isTabVisible = true;
+    document.addEventListener('visibilitychange', () => {
+      isTabVisible = !document.hidden;
+    });
+
+    /* 0. Mobile Drawer */
     let mobileMenuOpen = false;
     function toggleMobileMenu(forceState) {
       mobileMenuOpen = typeof forceState === 'boolean' ? forceState : !mobileMenuOpen;
@@ -1698,82 +1785,33 @@
       }
     }
 
-    /* ------------------------------------------------------------------------
-       1. FADING VIDEO ENGINE (Exact rAF crossfade loop from mindloop-landing.md)
-       ------------------------------------------------------------------------ */
-    (function initFadingVideos() {
-      const FADE_MS = 500;
-      const FADE_OUT_LEAD = 0.55;
+    /* 1. Lazy Video Loading with IntersectionObserver */
+    (function initLazyVideos() {
+      if (prefersReducedMotion || navigator.connection?.saveData) return;
+
       const videos = document.querySelectorAll('video.fading-video');
-
-      videos.forEach((video) => {
-        const targetMaxOpacity = video.id === 'hero-video' ? 0.52 : 0.72;
-        let fadeStart = null;
-        let fadeFrom = 0;
-        let fadeTo = targetMaxOpacity;
-        let fadingOut = false;
-
-        function stepFade(now) {
-          if (fadeStart === null) fadeStart = now;
-          const t = Math.min(1, (now - fadeStart) / FADE_MS);
-          const eased = 1 - Math.pow(1 - t, 3);
-          const current = fadeFrom + (fadeTo - fadeFrom) * eased;
-          video.style.opacity = current.toFixed(3);
-          if (t < 1) {
-            requestAnimationFrame(stepFade);
-          }
-        }
-
-        function fadeIn() {
-          fadingOut = false;
-          fadeStart = null;
-          fadeFrom = parseFloat(video.style.opacity || '0');
-          fadeTo = targetMaxOpacity;
-          requestAnimationFrame(stepFade);
-        }
-
-        function fadeOutAndRestart() {
-          if (fadingOut) return;
-          fadingOut = true;
-          fadeStart = null;
-          fadeFrom = parseFloat(video.style.opacity || String(targetMaxOpacity));
-          fadeTo = 0;
-          requestAnimationFrame(function outStep(now) {
-            if (fadeStart === null) fadeStart = now;
-            const t = Math.min(1, (now - fadeStart) / FADE_MS);
-            const current = fadeFrom * (1 - t);
-            video.style.opacity = current.toFixed(3);
-            if (t < 1) {
-              requestAnimationFrame(outStep);
-            } else {
-              video.currentTime = 0;
-              video.play().catch(() => {});
-              fadeIn();
+      const videoObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target;
+          if (entry.isIntersecting) {
+            if (!video.src && video.dataset.src) {
+              video.src = video.dataset.src;
+              video.load();
             }
-          });
-        }
-
-        video.addEventListener('loadeddata', fadeIn, { once: true });
-        video.addEventListener('timeupdate', () => {
-          if (video.duration && video.currentTime >= video.duration - FADE_OUT_LEAD) {
-            fadeOutAndRestart();
+            video.play().then(() => {
+              video.style.transition = 'opacity 0.6s ease';
+              video.style.opacity = video.id === 'hero-video' ? '0.52' : '0.72';
+            }).catch(() => {});
+          } else {
+            video.pause();
           }
         });
-        video.addEventListener('ended', () => {
-          video.currentTime = 0;
-          video.play().catch(() => {});
-          fadeIn();
-        });
+      }, { rootMargin: '120px 0px 120px 0px' });
 
-        if (video.readyState >= 2) {
-          fadeIn();
-        }
-      });
+      videos.forEach((v) => videoObserver.observe(v));
     })();
 
-    /* ------------------------------------------------------------------------
-       2. UNIFIED 60FPS SCROLL LERP LOOP + VELOCITY MARQUEE + SMPTE TIMECODE
-       ------------------------------------------------------------------------ */
+    /* 2. Scroll Physics & Cached Layout Measurements */
     const heroStage = document.getElementById('hero-stage');
     const heroWingLeft = document.getElementById('hero-wing-left');
     const heroWingRight = document.getElementById('hero-wing-right');
@@ -1781,14 +1819,12 @@
     const scrollProgressBar = document.getElementById('scroll-progress-bar');
     const navTimecode = document.getElementById('nav-timecode');
     const marqueeEl = document.getElementById('velocity-marquee');
-    const filmstripCards = Array.from(document.querySelectorAll('.filmstrip-card'));
 
-    // Split manifesto text into individual word spans
     let manifestoWords = [];
     if (manifestoEl) {
       const rawWords = manifestoEl.textContent.trim().split(/\s+/);
       manifestoEl.innerHTML = rawWords
-        .map((w) => `<span class="manifesto-word transition-colors duration-150" style="opacity:0.24">${w}</span>`)
+        .map((w) => `<span class="manifesto-word transition-colors duration-150" style="opacity:0.45">${w}</span>`)
         .join(' ');
       manifestoWords = Array.from(manifestoEl.querySelectorAll('.manifesto-word'));
     }
@@ -1797,22 +1833,29 @@
     let lerpedScrollY = window.scrollY;
     let scrollVelocity = 0;
     let marqueeOffset = 0;
-    let heroPointerX = 0;
-    let heroPointerY = 0;
-    let lerpedHeroPointerX = 0;
-    let lerpedHeroPointerY = 0;
+    let heroPointerX = 0, heroPointerY = 0;
+    let lerpedHeroPointerX = 0, lerpedHeroPointerY = 0;
 
-    window.addEventListener('scroll', () => {
-      currentScrollY = window.scrollY;
-    }, { passive: true });
+    let maxScroll = 1;
+    let marqueeSegWidth = 1200;
+    let vh = window.innerHeight;
+    function updateCachedMeasurements() {
+      maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      vh = window.innerHeight;
+      const firstSeg = marqueeEl?.querySelector('.marquee-segment');
+      if (firstSeg) marqueeSegWidth = firstSeg.offsetWidth;
+    }
+    window.addEventListener('resize', updateCachedMeasurements);
+    setTimeout(updateCachedMeasurements, 300);
 
+    window.addEventListener('scroll', () => { currentScrollY = window.scrollY; }, { passive: true });
     window.addEventListener('mousemove', (e) => {
       heroPointerX = (e.clientX / window.innerWidth - 0.5) * 2;
       heroPointerY = (e.clientY / window.innerHeight - 0.5) * 2;
     }, { passive: true });
 
     function formatSMPTETimecode(scrollRatio) {
-      const totalFrames = Math.floor(scrollRatio * 24 * 180); // 3 minutes timeline at 24fps
+      const totalFrames = Math.floor(scrollRatio * 24 * 180);
       const frames = totalFrames % 24;
       const totalSeconds = Math.floor(totalFrames / 24);
       const seconds = totalSeconds % 60;
@@ -1821,18 +1864,37 @@
       return `TC 01:${pad(minutes)}:${pad(seconds)}:${pad(frames)}`;
     }
 
+    let heroStageInView = true;
+    let marqueeInView = true;
+    let manifestoInView = true;
+
+    if ('IntersectionObserver' in window) {
+      const stageObs = new IntersectionObserver(([entry]) => { heroStageInView = entry.isIntersecting; });
+      if (heroStage) stageObs.observe(heroStage);
+
+      const marqObs = new IntersectionObserver(([entry]) => { marqueeInView = entry.isIntersecting; });
+      const marqSec = document.getElementById('marquee-section');
+      if (marqSec) marqObs.observe(marqSec);
+
+      const manObs = new IntersectionObserver(([entry]) => { manifestoInView = entry.isIntersecting; });
+      if (manifestoEl) manObs.observe(manifestoEl);
+    }
+
     function updateScrollPhysics() {
+      if (!isTabVisible) {
+        requestAnimationFrame(updateScrollPhysics);
+        return;
+      }
+
       const prevLerped = lerpedScrollY;
-      lerpedScrollY += (currentScrollY - lerpedScrollY) * 0.11;
+      lerpedScrollY += (currentScrollY - lerpedScrollY) * 0.12;
       scrollVelocity = lerpedScrollY - prevLerped;
 
       lerpedHeroPointerX += (heroPointerX - lerpedHeroPointerX) * 0.08;
       lerpedHeroPointerY += (heroPointerY - lerpedHeroPointerY) * 0.08;
 
-      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
       const pageProgress = Math.min(1, Math.max(0, lerpedScrollY / maxScroll));
 
-      // Top 1px Laser Progress Bar & Live SMPTE Timecode
       if (scrollProgressBar) {
         scrollProgressBar.style.transform = `scaleX(${pageProgress.toFixed(4)})`;
       }
@@ -1840,52 +1902,49 @@
         navTimecode.textContent = formatSMPTETimecode(pageProgress);
       }
 
-      // A. Hero 3D Stage perspective un-tilt + subtle pointer yaw/pitch
-      if (heroStage) {
+      // Hero Stage 3D Perspective (Skipped when off-screen or prefersReducedMotion)
+      if (heroStage && heroStageInView && !prefersReducedMotion) {
         const progress = Math.min(1, Math.max(0, lerpedScrollY / 520));
-        const baseRotateX = 13 * (1 - progress);
-        const pointerTiltX = -lerpedHeroPointerY * 2.4 * (1 - progress * 0.6);
-        const pointerTiltY = lerpedHeroPointerX * 3.2 * (1 - progress * 0.6);
-        const scale = 0.93 + 0.07 * progress;
-        const translateY = -12 * progress;
+        const baseRotateX = 12 * (1 - progress);
+        const pointerTiltX = -lerpedHeroPointerY * 2.2 * (1 - progress * 0.6);
+        const pointerTiltY = lerpedHeroPointerX * 3.0 * (1 - progress * 0.6);
+        const scale = 0.94 + 0.06 * progress;
+        const translateY = -10 * progress;
 
         heroStage.style.transform =
           `rotateX(${(baseRotateX + pointerTiltX).toFixed(2)}deg) rotateY(${pointerTiltY.toFixed(2)}deg) scale(${scale.toFixed(4)}) translate3d(0, ${translateY.toFixed(1)}px, 0)`;
 
         if (heroWingLeft && heroWingRight) {
-          const wingOffset = -28 * progress;
-          const pxShift = lerpedHeroPointerX * 12;
+          const wingOffset = -24 * progress;
+          const pxShift = lerpedHeroPointerX * 10;
           heroWingLeft.style.transform = `translate3d(${(-pxShift).toFixed(1)}px, ${wingOffset.toFixed(1)}px, 60px)`;
           heroWingRight.style.transform = `translate3d(${pxShift.toFixed(1)}px, ${(wingOffset * 1.25).toFixed(1)}px, 80px)`;
         }
       }
 
-      // B. Velocity-Driven Infinite Telemetry Marquee
-      if (marqueeEl) {
-        const firstSeg = marqueeEl.querySelector('.marquee-segment');
-        const segWidth = firstSeg ? firstSeg.offsetWidth : 1200;
-        const speed = 0.65 + Math.min(6, Math.abs(scrollVelocity) * 0.18);
+      // Marquee (Skipped when off-screen or prefersReducedMotion)
+      if (marqueeEl && marqueeInView && !prefersReducedMotion) {
+        const speed = 0.65 + Math.min(5, Math.abs(scrollVelocity) * 0.16);
         marqueeOffset -= speed;
-        if (Math.abs(marqueeOffset) >= segWidth) {
-          marqueeOffset += segWidth;
+        if (Math.abs(marqueeOffset) >= marqueeSegWidth) {
+          marqueeOffset += marqueeSegWidth;
         }
         marqueeEl.style.transform = `translate3d(${marqueeOffset.toFixed(1)}px, 0, 0)`;
       }
 
-      // C. Manifesto Word-by-Word Scroll Scrubbing
-      if (manifestoEl && manifestoWords.length) {
+      // Manifesto word scrubbing
+      if (manifestoEl && manifestoInView && manifestoWords.length && !prefersReducedMotion) {
         const rect = manifestoEl.getBoundingClientRect();
-        const vh = window.innerHeight;
-        const start = vh * 0.92;
-        const end = vh * 0.20;
+        const start = vh * 0.90;
+        const end = vh * 0.22;
         const totalProgress = Math.min(1, Math.max(0, (start - rect.top) / (start - end)));
 
         const count = manifestoWords.length;
         for (let i = 0; i < count; i++) {
           const wordRatio = i / count;
-          const baseOpacity = Math.max(0.24, 0.92 - wordRatio * 0.72);
-          const wordProgress = Math.min(1, Math.max(0, (totalProgress - wordRatio * 0.72) / 0.28));
-          const opacity = Math.max(baseOpacity, 0.24 + 0.76 * wordProgress);
+          const baseOpacity = Math.max(0.45, 0.95 - wordRatio * 0.50);
+          const wordProgress = Math.min(1, Math.max(0, (totalProgress - wordRatio * 0.68) / 0.32));
+          const opacity = Math.max(baseOpacity, 0.45 + 0.55 * wordProgress);
           manifestoWords[i].style.opacity = opacity.toFixed(2);
         }
       }
@@ -1894,72 +1953,57 @@
     }
     requestAnimationFrame(updateScrollPhysics);
 
-    /* ------------------------------------------------------------------------
-       3. SCROLL-TRIGGERED CHOREOGRAPHED REVEALS & SPEC COUNT-UP
-       ------------------------------------------------------------------------ */
+    /* 3. Staggered Scroll Reveals */
     (function initScrollReveals() {
       const revealEls = document.querySelectorAll('.scroll-reveal, .hairline-draw');
       const countEls = document.querySelectorAll('.count-num');
 
-      if (!('IntersectionObserver' in window)) {
+      if (prefersReducedMotion || !('IntersectionObserver' in window)) {
         revealEls.forEach((el) => el.classList.add('in-view'));
         return;
       }
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('in-view');
-            }
-          });
-        },
-        { threshold: 0.05, rootMargin: '120px 0px 120px 0px' }
-      );
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '60px 0px 60px 0px' });
 
       revealEls.forEach((el, idx) => {
         observer.observe(el);
-        // Fallback staggered reveal so full-page captures and deep anchor jumps never leave sections hidden
-        setTimeout(() => el.classList.add('in-view'), 350 + idx * 90);
+        setTimeout(() => el.classList.add('in-view'), 350 + idx * 75);
       });
 
-      // Count-up animation for giant spec numerals
-      const countObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            const el = entry.target;
-            if (el.dataset.counted === 'true') return;
-            el.dataset.counted = 'true';
+      const countObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target;
+          if (el.dataset.counted === 'true') return;
+          el.dataset.counted = 'true';
 
-            const target = parseInt(el.dataset.target || '0', 10);
-            const padLen = parseInt(el.dataset.pad || '0', 10);
-            const duration = 1100;
-            const start = performance.now();
+          const target = parseInt(el.dataset.target || '0', 10);
+          const duration = 1000;
+          const start = performance.now();
 
-            function stepCount(now) {
-              const t = Math.min(1, (now - start) / duration);
-              const eased = 1 - Math.pow(1 - t, 3);
-              const val = Math.round(target * eased);
-              el.textContent = padLen ? String(val).padStart(padLen, '0') : String(val);
-              if (t < 1) requestAnimationFrame(stepCount);
-            }
-            requestAnimationFrame(stepCount);
-          });
-        },
-        { threshold: 0.4 }
-      );
+          function stepCount(now) {
+            const t = Math.min(1, (now - start) / duration);
+            const eased = 1 - Math.pow(1 - t, 3);
+            el.textContent = String(Math.round(target * eased));
+            if (t < 1) requestAnimationFrame(stepCount);
+          }
+          requestAnimationFrame(stepCount);
+        });
+      }, { threshold: 0.35 });
 
       countEls.forEach((el) => countObserver.observe(el));
     })();
 
-    /* ------------------------------------------------------------------------
-       4. MAGNETIC BUTTONS, 3D CARD TILT & SPECULAR GLARE TRACKING
-       ------------------------------------------------------------------------ */
+    /* 4. Magnetic Buttons & Specular Glare Tracking */
     (function initMagneticAndTilt() {
-      if (window.matchMedia('(pointer: coarse)').matches) return;
+      if (prefersReducedMotion || window.matchMedia('(pointer: coarse)').matches) return;
 
-      // Specular glare tracking on all liquid-glass cards
       document.querySelectorAll('.liquid-glass, .liquid-glass-strong').forEach((card) => {
         card.addEventListener('mousemove', (e) => {
           const rect = card.getBoundingClientRect();
@@ -1970,7 +2014,6 @@
         }, { passive: true });
       });
 
-      // Magnetic pull on [data-magnetic] elements
       document.querySelectorAll('[data-magnetic]').forEach((el) => {
         const strength = parseFloat(el.dataset.magnetic || '0.2');
         let targetX = 0, targetY = 0;
@@ -2003,29 +2046,13 @@
           if (!rafId) rafId = requestAnimationFrame(animateMagnetic);
         });
       });
-
-      // 3D Tilt on [data-tilt] cards
-      document.querySelectorAll('[data-tilt]').forEach((card) => {
-        const maxTilt = parseFloat(card.dataset.tilt || '0.04') * 100;
-        card.addEventListener('mousemove', (e) => {
-          const rect = card.getBoundingClientRect();
-          const nx = (e.clientX - rect.left) / rect.width - 0.5;
-          const ny = (e.clientY - rect.top) / rect.height - 0.5;
-          card.style.transform = `perspective(1000px) rotateX(${(-ny * maxTilt).toFixed(2)}deg) rotateY(${(nx * maxTilt).toFixed(2)}deg)`;
-        });
-        card.addEventListener('mouseleave', () => {
-          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
-        });
-      });
     })();
 
-    /* ------------------------------------------------------------------------
-       5. CUSTOM EXCLUSION CURSOR (rAF Lerped)
-       ------------------------------------------------------------------------ */
+    /* 5. Custom Cursor */
     (function initCustomCursor() {
       const cursor = document.getElementById('custom-cursor');
       const label = document.getElementById('cursor-label');
-      if (!cursor || window.matchMedia('(pointer: coarse)').matches) return;
+      if (!cursor || prefersReducedMotion || window.matchMedia('(pointer: coarse)').matches) return;
 
       let mouseX = -100, mouseY = -100;
       let curX = -100, curY = -100;
@@ -2037,11 +2064,10 @@
 
       document.querySelectorAll('[data-cursor]').forEach((el) => {
         el.addEventListener('mouseenter', () => {
-          const text = el.getAttribute('data-cursor') || '';
-          label.textContent = text;
+          label.textContent = el.getAttribute('data-cursor') || '';
           label.style.opacity = '1';
-          cursor.style.width = '68px';
-          cursor.style.height = '68px';
+          cursor.style.width = '70px';
+          cursor.style.height = '70px';
         });
         el.addEventListener('mouseleave', () => {
           label.style.opacity = '0';
@@ -2059,45 +2085,50 @@
       requestAnimationFrame(tickCursor);
     })();
 
-    /* ------------------------------------------------------------------------
-       6. INTERACTIVE 01/05 ROOM CHAPTER SWITCHER + AUTO-CYCLE + TOUCH SWIPE
-       ------------------------------------------------------------------------ */
+    /* 6. Rooms 01/05 Switcher with Pause Control */
     const ROOM_METADATA = [
       {
-        file: 'ui/components/ColorWheelControl.kt',
+        file: 'ui/components/ColorWheel.kt',
         caption: 'S24 Sunset Portrait · Lift / Gamma / Gain / Offset + Luma/RGB Histogram',
-        src: 'public/screenshots/app-wheels-scopes.png'
+        src: 'screenshots/app-wheels-scopes.png'
       },
       {
         file: 'ui/components/CurvesEditor.kt',
         caption: 'S24 Tokyo Cyber Neon · Fritsch-Carlson Monotonic Splines + RGB Waveform Parade',
-        src: 'public/screenshots/app-curves-parade.png'
+        src: 'screenshots/app-curves-parade.png'
       },
       {
-        file: 'color/FilmEmulationPresets.kt',
-        caption: 'S24 Alpine Lake · 33×33×33 Tetrahedral 3D LUT Vault (92% Blend)',
-        src: 'public/screenshots/app-luts-browser.png'
+        file: 'ui/components/LutManager.kt',
+        caption: 'S24 Alpine Lake · 3D LUT Vault with 33³ .cube Export (92% Blend)',
+        src: 'screenshots/app-luts-browser.png'
       },
       {
         file: 'ui/components/PowerWindowOverlay.kt',
-        caption: 'S24 Film Noir Studio · Interactive Elliptical Power Window & Cosine Feather',
-        src: 'public/screenshots/app-power-window.png'
+        caption: 'S24 Film Noir Studio · Interactive Elliptical Power Window Qualifier',
+        src: 'screenshots/app-power-window.png'
       },
       {
-        file: 'ui/screens/GradingStudioScreen.kt',
+        file: 'ui/GradingStudioScreen.kt',
         caption: 'Adaptive w880dp Landscape · Dual-Monitor Grading & Scope Workstation',
-        src: 'public/screenshots/app-landscape-studio.png'
+        src: 'screenshots/app-landscape-studio.png'
       }
     ];
 
     let activeRoomIndex = 0;
     let roomCycleStart = performance.now();
     let roomAutoPaused = false;
+    let autoCycleEnabled = !prefersReducedMotion;
     const ROOM_CYCLE_MS = 5600;
 
     function selectRoom(index, userInitiated) {
       activeRoomIndex = (index + ROOM_METADATA.length) % ROOM_METADATA.length;
       roomCycleStart = performance.now();
+
+      if (userInitiated) {
+        // Stop auto cycle permanently once user interacts
+        autoCycleEnabled = false;
+        updateCycleButtonUI();
+      }
 
       const buttons = document.querySelectorAll('[data-room-btn]');
       const mobilePills = document.querySelectorAll('[data-mobile-room]');
@@ -2108,14 +2139,16 @@
       const caption = document.getElementById('stage-caption');
 
       buttons.forEach((btn, idx) => {
-        btn.classList.toggle('active', idx === activeRoomIndex);
+        const isActive = idx === activeRoomIndex;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', String(isActive));
       });
       mobilePills.forEach((pill, idx) => {
-        if (idx === activeRoomIndex) {
-          pill.className = 'mobile-room-pill shrink-0 rounded-full bg-white text-black px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-all';
-        } else {
-          pill.className = 'mobile-room-pill shrink-0 liquid-glass rounded-full text-white/70 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-all';
-        }
+        const isActive = idx === activeRoomIndex;
+        pill.setAttribute('aria-selected', String(isActive));
+        pill.className = isActive
+          ? 'mobile-room-pill shrink-0 rounded-full bg-white text-black px-4 py-2.5 min-h-[44px] font-mono text-[11px] uppercase tracking-[0.14em]'
+          : 'mobile-room-pill shrink-0 liquid-glass rounded-full text-white/80 px-4 py-2.5 min-h-[44px] font-mono text-[11px] uppercase tracking-[0.14em]';
       });
       shots.forEach((shot, idx) => {
         shot.classList.toggle('active', idx === activeRoomIndex);
@@ -2124,19 +2157,29 @@
         if (idx !== activeRoomIndex) bar.style.transform = 'scaleX(0)';
       });
 
-      if (reel) {
-        reel.style.transform = `translate3d(0, -${activeRoomIndex * 16}px, 0)`;
-      }
-      if (sourceFile && ROOM_METADATA[activeRoomIndex]) {
-        sourceFile.textContent = ROOM_METADATA[activeRoomIndex].file;
-      }
-      if (caption && ROOM_METADATA[activeRoomIndex]) {
-        caption.textContent = ROOM_METADATA[activeRoomIndex].caption;
-      }
+      if (reel) reel.style.transform = `translate3d(0, -${activeRoomIndex * 16}px, 0)`;
+      if (sourceFile && ROOM_METADATA[activeRoomIndex]) sourceFile.textContent = ROOM_METADATA[activeRoomIndex].file;
+      if (caption && ROOM_METADATA[activeRoomIndex]) caption.textContent = ROOM_METADATA[activeRoomIndex].caption;
     }
 
-    // Auto-cycle progress bar rAF loop
+    function toggleAutoCycle() {
+      autoCycleEnabled = !autoCycleEnabled;
+      if (autoCycleEnabled) roomCycleStart = performance.now();
+      updateCycleButtonUI();
+    }
+
+    function updateCycleButtonUI() {
+      const btn = document.getElementById('cycle-toggle-btn');
+      const icon = document.getElementById('cycle-icon');
+      const label = document.getElementById('cycle-label');
+      if (!btn) return;
+      btn.setAttribute('aria-pressed', String(!autoCycleEnabled));
+      if (icon) icon.textContent = autoCycleEnabled ? '⏸' : '▶';
+      if (label) label.textContent = autoCycleEnabled ? 'Pause Auto-Cycle' : 'Resume Auto-Cycle';
+    }
+
     (function initRoomAutoCycle() {
+      let roomsInView = false;
       const zone = document.getElementById('rooms-interactive-zone');
       if (zone) {
         zone.addEventListener('mouseenter', () => { roomAutoPaused = true; });
@@ -2146,34 +2189,34 @@
         });
       }
 
-      // Touch swipe support on stage viewport
+      if ('IntersectionObserver' in window) {
+        const roomObs = new IntersectionObserver(([entry]) => {
+          roomsInView = entry.isIntersecting;
+          if (roomsInView) roomCycleStart = performance.now();
+        });
+        const roomsSec = document.getElementById('rooms');
+        if (roomsSec) roomObs.observe(roomsSec);
+      } else {
+        roomsInView = true;
+      }
+
       const viewport = document.getElementById('room-stage-viewport');
       if (viewport) {
         let touchStartX = 0;
-        viewport.addEventListener('touchstart', (e) => {
-          touchStartX = e.touches[0].clientX;
-        }, { passive: true });
+        viewport.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
         viewport.addEventListener('touchend', (e) => {
           const dx = e.changedTouches[0].clientX - touchStartX;
-          if (Math.abs(dx) > 42) {
-            selectRoom(activeRoomIndex + (dx < 0 ? 1 : -1), true);
-          }
+          if (Math.abs(dx) > 42) selectRoom(activeRoomIndex + (dx < 0 ? 1 : -1), true);
         }, { passive: true });
       }
 
       function tickRoomProgress(now) {
-        if (roomAutoPaused) {
-          roomCycleStart = now;
-        } else {
+        if (autoCycleEnabled && roomsInView && isTabVisible && !roomAutoPaused) {
           const elapsed = now - roomCycleStart;
           const t = Math.min(1, elapsed / ROOM_CYCLE_MS);
           const activeBar = document.querySelector(`[data-room-progress="${activeRoomIndex}"]`);
-          if (activeBar) {
-            activeBar.style.transform = `scaleX(${t.toFixed(3)})`;
-          }
-          if (t >= 1) {
-            selectRoom((activeRoomIndex + 1) % ROOM_METADATA.length, false);
-          }
+          if (activeBar) activeBar.style.transform = `scaleX(${t.toFixed(3)})`;
+          if (t >= 1) selectRoom((activeRoomIndex + 1) % ROOM_METADATA.length, false);
         }
         requestAnimationFrame(tickRoomProgress);
       }
@@ -2185,59 +2228,55 @@
       openLightbox(meta.src, meta.caption);
     }
 
-    /* ------------------------------------------------------------------------
-       7. 60FPS SAMSUNG LOG TRANSFER OSCILLOSCOPE (WITH DRAGGABLE SPLINE NODES!)
-       ------------------------------------------------------------------------ */
+    /* 7. Canvas Oscilloscope with Intersection Pause */
     const OPTICAL_PRESETS = [
       {
         title: '01 · S24 Log → Rec.709 Base + Hermite Highlight Knee',
-        dr: '14.2 STOPS',
+        profile: 'REC.709 BASE',
         contrast: 1.05,
         Pivot: 0.43,
         shoulder: 0.80,
         blackLift: 0.0,
-        leftImg: 'public/screenshots/app-wheels-scopes.png',
-        rightImg: 'public/screenshots/app-curves-parade.png'
+        leftImg: 'screenshots/app-wheels-scopes.png',
+        rightImg: 'screenshots/app-curves-parade.png'
       },
       {
-        title: '02 · Fujifilm Classic Neg (33³ Tetrahedral Emulation)',
-        dr: '13.8 STOPS',
+        title: '02 · Fujifilm Classic Neg Film Recipe',
+        profile: 'CLASSIC NEG',
         contrast: 1.24,
         Pivot: 0.40,
         shoulder: 0.76,
         blackLift: 0.025,
-        leftImg: 'public/screenshots/app-wheels-scopes.png',
-        rightImg: 'public/screenshots/app-luts-browser.png'
+        leftImg: 'screenshots/app-wheels-scopes.png',
+        rightImg: 'screenshots/app-luts-browser.png'
       },
       {
-        title: '03 · Kodak Vision3 2383 Print Film Stock',
-        dr: '14.5 STOPS',
+        title: '03 · Kodak Vision3 2383 Print Stock',
+        profile: 'KODAK 2383',
         contrast: 1.32,
         Pivot: 0.45,
         shoulder: 0.74,
         blackLift: 0.015,
-        leftImg: 'public/screenshots/app-curves-parade.png',
-        rightImg: 'public/screenshots/app-luts-browser.png'
+        leftImg: 'screenshots/app-curves-parade.png',
+        rightImg: 'screenshots/app-luts-browser.png'
       },
       {
         title: '04 · Fujifilm Neopan 100 ACROS Monochrome',
-        dr: '14.6 STOPS',
+        profile: 'ACROS MONO',
         contrast: 1.38,
         Pivot: 0.42,
         shoulder: 0.82,
         blackLift: 0.01,
-        leftImg: 'public/screenshots/app-wheels-scopes.png',
-        rightImg: 'public/screenshots/app-power-window.png'
+        leftImg: 'screenshots/app-wheels-scopes.png',
+        rightImg: 'screenshots/app-power-window.png'
       }
     ];
 
-    let activePreset = 0;
     let currentParams = { ...OPTICAL_PRESETS[0] };
     let targetParams = { ...OPTICAL_PRESETS[0] };
     let kneeOverride = 0.80;
 
     function setOpticalPreset(idx) {
-      activePreset = idx;
       targetParams = { ...OPTICAL_PRESETS[idx] };
       kneeOverride = targetParams.shoulder;
 
@@ -2247,7 +2286,7 @@
       if (kneeLabel) kneeLabel.textContent = kneeOverride.toFixed(2);
 
       document.getElementById('lut-Readout-Title').textContent = targetParams.title;
-      document.getElementById('lut-dr-value').textContent = targetParams.dr;
+      document.getElementById('lut-dr-value').textContent = targetParams.profile;
 
       const leftImg = document.getElementById('compare-img-left');
       const rightImg = document.getElementById('compare-img-right');
@@ -2257,11 +2296,9 @@
       }
 
       document.querySelectorAll('[data-preset-btn]').forEach((btn, i) => {
-        if (i === idx) {
-          btn.className = 'preset-pill rounded-full bg-white text-black px-3.5 py-1.5 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all';
-        } else {
-          btn.className = 'preset-pill liquid-glass rounded-full text-white/70 hover:text-white px-3.5 py-1.5 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all';
-        }
+        btn.className = (i === idx)
+          ? 'preset-pill rounded-full bg-white text-black px-3.5 py-2 min-h-[44px] font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all'
+          : 'preset-pill liquid-glass rounded-full text-white/80 hover:text-white px-3.5 py-2 min-h-[44px] font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.14em] transition-all';
       });
     }
 
@@ -2275,13 +2312,18 @@
       });
     }
 
-    // Canvas Oscilloscope Renderer with Interactive Node Dragging
     (function initTransferCanvas() {
       const canvas = document.getElementById('transfer-canvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       let phase = 0;
-      let draggingAnchor = -1; // 0 = blackLift, 1 = Pivot, 2 = shoulder
+      let draggingAnchor = -1;
+      let canvasInView = true;
+
+      if ('IntersectionObserver' in window) {
+        const cObs = new IntersectionObserver(([entry]) => { canvasInView = entry.isIntersecting; });
+        cObs.observe(canvas);
+      }
 
       function resizeCanvas() {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -2304,13 +2346,11 @@
 
         if (y > p.shoulder) {
           const t = (y - p.shoulder) / (1 - p.shoulder);
-          const compressed = p.shoulder + (1 - p.shoulder) * (t - 0.38 * t * t);
-          y = compressed;
+          y = p.shoulder + (1 - p.shoulder) * (t - 0.38 * t * t);
         }
         return Math.min(0.98, Math.max(0.02, y));
       }
 
-      // Interactive pointer dragging on the 3 curve nodes
       function getPlotBounds() {
         const w = canvas.clientWidth;
         const h = canvas.clientHeight;
@@ -2329,7 +2369,7 @@
           const ay = gradedCurve(ax, currentParams);
           const px = padL + ax * plotW;
           const py = padT + (1 - ay) * plotH;
-          if (Math.hypot(mx - px, my - py) < 26) {
+          if (Math.hypot(mx - px, my - py) < 28) {
             draggingAnchor = idx;
             canvas.setPointerCapture(e.pointerId);
           }
@@ -2359,11 +2399,14 @@
         }
       });
 
-      canvas.addEventListener('pointerup', () => {
-        draggingAnchor = -1;
-      });
+      canvas.addEventListener('pointerup', () => { draggingAnchor = -1; });
 
       function drawOscilloscope() {
+        if (!canvasInView || !isTabVisible) {
+          requestAnimationFrame(drawOscilloscope);
+          return;
+        }
+
         const { w, h, padL, padT, plotW, plotH } = getPlotBounds();
         ctx.clearRect(0, 0, w, h);
 
@@ -2372,11 +2415,10 @@
         currentParams.shoulder += (targetParams.shoulder - currentParams.shoulder) * 0.16;
         currentParams.blackLift += (targetParams.blackLift - currentParams.blackLift) * 0.14;
 
-        // 1. IRE Graticule Grid
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
         ctx.lineWidth = 1;
         ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillStyle = 'rgba(255,255,255,0.32)';
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
 
         for (let i = 0; i <= 4; i++) {
           const y = padT + (plotH * i) / 4;
@@ -2384,74 +2426,62 @@
           ctx.moveTo(padL, y);
           ctx.lineTo(padL + plotW, y);
           ctx.stroke();
-          const ire = 100 - i * 25;
-          ctx.fillText(`${ire}`, 8, y + 3);
+          ctx.fillText(`${100 - i * 25}`, 8, y + 3);
         }
 
-        // 2. Highlight Knee Threshold Line (Dashed)
         const kneeY = padT + plotH * (1 - currentParams.shoulder);
         ctx.save();
         ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
         ctx.beginPath();
         ctx.moveTo(padL, kneeY);
         ctx.lineTo(padL + plotW, kneeY);
         ctx.stroke();
         ctx.restore();
 
-        // 3. Live Waveform Density Bars
         phase += 0.025;
-        ctx.fillStyle = 'rgba(255,255,255,0.06)';
-        const bins = 56;
+        ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        const bins = 48;
         const barW = Math.max(1.5, plotW / bins - 2);
         for (let b = 0; b < bins; b++) {
           const norm = b / bins;
-          const wave =
-            Math.sin(norm * 9 + phase) * 0.25 +
-            Math.cos(norm * 17 - phase * 0.7) * 0.18 +
-            0.55;
-          const barH = Math.max(4, wave * plotH * 0.34);
+          const wave = Math.sin(norm * 8 + phase) * 0.22 + Math.cos(norm * 14 - phase * 0.6) * 0.16 + 0.52;
+          const barH = Math.max(4, wave * plotH * 0.32);
           const bx = padL + b * (plotW / bins);
           ctx.fillRect(bx, padT + plotH - barH, barW, barH);
         }
 
-        // 4. Samsung S24 Log Raw Input Curve
-        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.45)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        for (let i = 0; i <= 110; i++) {
-          const xNorm = i / 110;
-          const yNorm = samsungLogEncode(xNorm);
+        for (let i = 0; i <= 100; i++) {
+          const xNorm = i / 100;
           const px = padL + xNorm * plotW;
-          const py = padT + (1 - yNorm) * plotH;
+          const py = padT + (1 - samsungLogEncode(xNorm)) * plotH;
           if (i === 0) ctx.moveTo(px, py);
           else ctx.lineTo(px, py);
         }
         ctx.stroke();
 
-        // 5. Graded Output Transfer Curve
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 2.25;
         ctx.beginPath();
-        for (let i = 0; i <= 130; i++) {
-          const xNorm = i / 130;
-          const yNorm = gradedCurve(xNorm, currentParams);
+        for (let i = 0; i <= 120; i++) {
+          const xNorm = i / 120;
           const px = padL + xNorm * plotW;
-          const py = padT + (1 - yNorm) * plotH;
+          const py = padT + (1 - gradedCurve(xNorm, currentParams)) * plotH;
           if (i === 0) ctx.moveTo(px, py);
           else ctx.lineTo(px, py);
         }
         ctx.stroke();
 
-        // 6. Interactive Control Anchor Nodes
         const anchorPoints = [0.15, currentParams.Pivot, currentParams.shoulder];
         anchorPoints.forEach((ax, idx) => {
           const ay = gradedCurve(ax, currentParams);
           const px = padL + ax * plotW;
           const py = padT + (1 - ay) * plotH;
 
-          // Outer halo pulse on active/draggable nodes
-          ctx.fillStyle = draggingAnchor === idx ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.1)';
+          ctx.fillStyle = draggingAnchor === idx ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)';
           ctx.beginPath();
           ctx.arc(px, py, draggingAnchor === idx ? 12 : 8, 0, Math.PI * 2);
           ctx.fill();
@@ -2470,9 +2500,7 @@
       requestAnimationFrame(drawOscilloscope);
     })();
 
-    /* ------------------------------------------------------------------------
-       8. INTERACTIVE SPLIT-SCREEN WIPE COMPARATOR (rAF Damped)
-       ------------------------------------------------------------------------ */
+    /* 8. Split-Screen Wipe */
     (function initSplitComparator() {
       const container = document.getElementById('compare-container');
       const clip = document.getElementById('compare-clip');
@@ -2480,101 +2508,80 @@
       const readout = document.getElementById('wipe-readout');
       if (!container || !clip || !divider) return;
 
-      let targetSplit = 50;
-      let currentSplit = 50;
-      let isDragging = false;
+      let targetSplit = 50, currentSplit = 50, isDragging = false;
 
-      function updateTargetFromEvent(clientX) {
+      function updateTarget(clientX) {
         const rect = container.getBoundingClientRect();
-        const rel = ((clientX - rect.left) / rect.width) * 100;
-        targetSplit = Math.min(92, Math.max(8, rel));
+        targetSplit = Math.min(92, Math.max(8, ((clientX - rect.left) / rect.width) * 100));
       }
 
       container.addEventListener('pointerdown', (e) => {
         isDragging = true;
         container.setPointerCapture(e.pointerId);
-        updateTargetFromEvent(e.clientX);
+        updateTarget(e.clientX);
       });
-      container.addEventListener('pointermove', (e) => {
-        if (!isDragging) return;
-        updateTargetFromEvent(e.clientX);
-      });
-      container.addEventListener('pointerup', () => {
-        isDragging = false;
-      });
-      container.addEventListener('mousemove', (e) => {
-        if (!isDragging && e.buttons === 0) {
-          updateTargetFromEvent(e.clientX);
-        }
-      });
+      container.addEventListener('pointermove', (e) => { if (isDragging) updateTarget(e.clientX); });
+      container.addEventListener('pointerup', () => { isDragging = false; });
+      container.addEventListener('mousemove', (e) => { if (!isDragging && e.buttons === 0) updateTarget(e.clientX); });
 
       function tickSplit() {
         currentSplit += (targetSplit - currentSplit) * 0.18;
-        const rightInset = 100 - currentSplit;
-        clip.style.clipPath = `inset(0 ${rightInset.toFixed(2)}% 0 0)`;
+        clip.style.clipPath = `inset(0 ${(100 - currentSplit).toFixed(2)}% 0 0)`;
         divider.style.left = `${currentSplit.toFixed(2)}%`;
-        if (readout) {
-          readout.textContent = `${Math.round(currentSplit)}% SPLIT`;
-        }
+        if (readout) readout.textContent = `${Math.round(currentSplit)}% SPLIT`;
         requestAnimationFrame(tickSplit);
       }
       requestAnimationFrame(tickSplit);
     })();
 
-    /* ------------------------------------------------------------------------
-       9. FILMSTRIP VELOCITY SKEW & LIGHTBOX
-       ------------------------------------------------------------------------ */
-    (function initFilmstripPhysics() {
-      const scroller = document.getElementById('filmstrip-scroller');
-      if (!scroller) return;
-      let lastScrollLeft = scroller.scrollLeft;
-      let currentSkew = 0;
-
-      function tickFilmstrip() {
-        const delta = scroller.scrollLeft - lastScrollLeft;
-        lastScrollLeft = scroller.scrollLeft;
-        const targetSkew = Math.max(-4.5, Math.min(4.5, -delta * 0.12));
-        currentSkew += (targetSkew - currentSkew) * 0.18;
-
-        if (Math.abs(currentSkew) > 0.05) {
-          filmstripCards.forEach((card) => {
-            card.style.transform = `skewX(${currentSkew.toFixed(2)}deg)`;
-          });
-        }
-        requestAnimationFrame(tickFilmstrip);
-      }
-      requestAnimationFrame(tickFilmstrip);
-    })();
-
+    /* 9. Filmstrip Controls & Lightbox Dialog */
     function nudgeFilmstrip(dir) {
       const scroller = document.getElementById('filmstrip-scroller');
-      if (!scroller) return;
-      scroller.scrollBy({ left: dir * 420, behavior: 'smooth' });
+      if (scroller) scroller.scrollBy({ left: dir * 420, behavior: 'smooth' });
     }
 
+    let lastFocusedElement = null;
     function openLightbox(src, captionText) {
-      const modal = document.getElementById('lightbox-modal');
+      const dialog = document.getElementById('lightbox-dialog');
       const img = document.getElementById('lightbox-img');
       const cap = document.getElementById('lightbox-caption');
-      if (!modal || !img) return;
+      if (!dialog || !img) return;
+
+      lastFocusedElement = document.activeElement;
       img.src = src;
       if (cap) cap.textContent = captionText || '';
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+
+      if (typeof dialog.showModal === 'function') {
+        dialog.showModal();
+      } else {
+        dialog.setAttribute('open', '');
+      }
     }
 
     function closeLightbox() {
-      const modal = document.getElementById('lightbox-modal');
-      if (!modal) return;
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      const dialog = document.getElementById('lightbox-dialog');
+      if (!dialog) return;
+      if (typeof dialog.close === 'function') {
+        dialog.close();
+      } else {
+        dialog.removeAttribute('open');
+      }
+      if (lastFocusedElement) {
+        lastFocusedElement.focus();
+        lastFocusedElement = null;
+      }
+    }
+
+    const dialogEl = document.getElementById('lightbox-dialog');
+    if (dialogEl) {
+      dialogEl.addEventListener('click', (e) => {
+        if (e.target === dialogEl) closeLightbox();
+      });
+      dialogEl.addEventListener('cancel', () => { closeLightbox(); });
     }
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeLightbox();
-        if (mobileMenuOpen) toggleMobileMenu(false);
-      }
+      if (e.key === 'Escape' && mobileMenuOpen) toggleMobileMenu(false);
     });
   </script>
 </body>

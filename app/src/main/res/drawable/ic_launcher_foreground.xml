@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Red Color Wheel Segment (Top-Left) -->
+    <path
+        android:fillColor="#EF4444"
+        android:pathData="M 54 28 A 26 26 0 0 0 31.48 41 L 40.14 46 A 16 16 0 0 1 54 38 Z" />
+
+    <!-- Yellow Segment (Top) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M 54 28 A 26 26 0 0 1 76.52 41 L 67.86 46 A 16 16 0 0 0 54 38 Z" />
+
+    <!-- Green Segment (Right) -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M 76.52 41 A 26 26 0 0 1 76.52 67 L 67.86 62 A 16 16 0 0 0 67.86 46 Z" />
+
+    <!-- Cyan Segment (Bottom-Right) -->
+    <path
+        android:fillColor="#06B6D4"
+        android:pathData="M 76.52 67 A 26 26 0 0 1 54 80 L 54 70 A 16 16 0 0 0 67.86 62 Z" />
+
+    <!-- Blue Segment (Bottom-Left) -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M 54 80 A 26 26 0 0 1 31.48 67 L 40.14 62 A 16 16 0 0 0 54 70 Z" />
+
+    <!-- Magenta Segment (Left) -->
+    <path
+        android:fillColor="#EC4899"
+        android:pathData="M 31.48 67 A 26 26 0 0 1 31.48 41 L 40.14 46 A 16 16 0 0 0 40.14 62 Z" />
+
+    <!-- Inner Trackball Dial -->
+    <path
+        android:fillColor="#1F2430"
+        android:pathData="M 54 42 A 12 12 0 1 0 54 66 A 12 12 0 1 0 54 42 Z" />
+
+    <!-- Center Reticle Glow Dot -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M 54 50 A 4 4 0 1 0 54 58 A 4 4 0 1 0 54 50 Z" />
+
+    <!-- Reticle Crosshairs -->
+    <path
+        android:strokeColor="#64748B"
+        android:strokeWidth="1.2"
+        android:pathData="M 54 45 L 54 49 M 54 59 L 54 63 M 45 54 L 49 54 M 59 54 L 63 54" />
+
+    <!-- Waveform Accent Curves below -->
+    <path
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M 34 87 Q 44 83 54 87 T 74 87" />
+
+</vector>

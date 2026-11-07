@@ -48,8 +48,9 @@ fun MultiClipTimelineStrip(
     onRemoveClip: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isExpanded by remember { mutableStateOf(true) }
-    var showAddMenu by remember { mutableStateOf(false) }
+    if (clips.isEmpty()) return
+
+    var isExpanded by remember(clips.size) { mutableStateOf(clips.size > 1) }
 
     Column(
         modifier = modifier
@@ -58,7 +59,7 @@ fun MultiClipTimelineStrip(
             .clip(RoundedCornerShape(10.dp))
             .background(Color(0xFF0E121B))
             .border(1.dp, StudioCardBorder, RoundedCornerShape(10.dp))
-            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .padding(horizontal = 10.dp, vertical = 7.dp)
     ) {
         // =========================================================================
         // 1. TOP BAR: ACTIVE CLIP INDICATOR + COPY / PASTE / SYNC / +CLIP ACTIONS
@@ -74,55 +75,55 @@ fun MultiClipTimelineStrip(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
                     .clickable { isExpanded = !isExpanded }
-                    .padding(vertical = 2.dp, horizontal = 4.dp)
+                    .padding(vertical = 3.dp, horizontal = 4.dp)
                     .testTag("toggle_clip_strip_btn")
             ) {
                 Icon(
                     imageVector = Icons.Default.ViewCarousel,
                     contentDescription = "Clips Strip",
                     tint = ResolveAmber,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(16.dp)
                 )
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 val activeNum = (activeClipIndex + 1).coerceAtMost(clips.size.coerceAtLeast(1))
                 Text(
                     text = String.format("CLIP %02d/%02d", activeNum, clips.size),
                     color = ResolveAmber,
-                    fontSize = 9.5.sp,
+                    fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Black
                 )
-                Spacer(modifier = Modifier.width(3.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = "Expand Clips",
                     tint = TextMuted,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
 
-            // Right: Copy Grade, Paste Grade, Sync All, + Add Clip
+            // Right: Copy Grade, Paste Grade, Sync All, + Import Clip
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 // Copy Grade
                 Surface(
                     onClick = onCopyGrade,
                     color = Color(0xFF171E2C),
-                    shape = RoundedCornerShape(5.dp),
+                    shape = RoundedCornerShape(6.dp),
                     border = CardDefaults.outlinedCardBorder().copy(
                         brush = androidx.compose.ui.graphics.SolidColor(Color(0xFF2B3548))
                     ),
-                    modifier = Modifier.height(22.dp).testTag("copy_clip_grade_btn")
+                    modifier = Modifier.height(28.dp).testTag("copy_clip_grade_btn")
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 6.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy Grade", tint = ResolveCyan, modifier = Modifier.size(10.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("COPY", color = ResolveCyan, fontSize = 8.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy Grade", tint = ResolveCyan, modifier = Modifier.size(12.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("COPY", color = ResolveCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                     }
                 }
 
@@ -130,29 +131,29 @@ fun MultiClipTimelineStrip(
                 Surface(
                     onClick = { if (hasCopiedGrade) onPasteGrade() },
                     color = if (hasCopiedGrade) ResolveAmber.copy(alpha = 0.2f) else Color(0xFF131722),
-                    shape = RoundedCornerShape(5.dp),
+                    shape = RoundedCornerShape(6.dp),
                     border = CardDefaults.outlinedCardBorder().copy(
                         brush = androidx.compose.ui.graphics.SolidColor(
                             if (hasCopiedGrade) ResolveAmber else Color(0xFF232B3A)
                         )
                     ),
-                    modifier = Modifier.height(22.dp).testTag("paste_clip_grade_btn")
+                    modifier = Modifier.height(28.dp).testTag("paste_clip_grade_btn")
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 6.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
                         Icon(
                             Icons.Default.ContentPaste,
                             contentDescription = "Paste Grade",
                             tint = if (hasCopiedGrade) ResolveAmber else TextMuted,
-                            modifier = Modifier.size(10.dp)
+                            modifier = Modifier.size(12.dp)
                         )
-                        Spacer(modifier = Modifier.width(3.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             "PASTE",
                             color = if (hasCopiedGrade) ResolveAmber else TextMuted,
-                            fontSize = 8.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace
                         )
@@ -163,67 +164,39 @@ fun MultiClipTimelineStrip(
                 Surface(
                     onClick = onSyncAllGrades,
                     color = Color(0xFF171E2C),
-                    shape = RoundedCornerShape(5.dp),
+                    shape = RoundedCornerShape(6.dp),
                     border = CardDefaults.outlinedCardBorder().copy(
                         brush = androidx.compose.ui.graphics.SolidColor(Color(0xFF2B3548))
                     ),
-                    modifier = Modifier.height(22.dp).testTag("sync_all_clips_btn")
+                    modifier = Modifier.height(28.dp).testTag("sync_all_clips_btn")
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 6.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
-                        Icon(Icons.Default.Sync, contentDescription = "Sync All", tint = ResolveGreen, modifier = Modifier.size(10.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("ALL", color = ResolveGreen, fontSize = 8.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        Icon(Icons.Default.Sync, contentDescription = "Sync All", tint = ResolveGreen, modifier = Modifier.size(12.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("ALL", color = ResolveGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                     }
                 }
 
-                // + Add Clip Dropdown Button
-                Box {
-                    Surface(
-                        onClick = { showAddMenu = true },
-                        color = ResolveAmber.copy(alpha = 0.18f),
-                        shape = RoundedCornerShape(5.dp),
-                        border = CardDefaults.outlinedCardBorder().copy(
-                            brush = androidx.compose.ui.graphics.SolidColor(ResolveAmber)
-                        ),
-                        modifier = Modifier.height(22.dp).testTag("add_timeline_clip_btn")
+                // + Import Clip Button (Directly opens phone video picker)
+                Surface(
+                    onClick = onImportVideoClip,
+                    color = ResolveAmber.copy(alpha = 0.18f),
+                    shape = RoundedCornerShape(6.dp),
+                    border = CardDefaults.outlinedCardBorder().copy(
+                        brush = androidx.compose.ui.graphics.SolidColor(ResolveAmber)
+                    ),
+                    modifier = Modifier.height(28.dp).testTag("add_timeline_clip_btn")
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 6.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Clip", tint = ResolveAmber, modifier = Modifier.size(11.dp))
-                            Spacer(modifier = Modifier.width(2.dp))
-                            Text("CLIP", color = ResolveAmber, fontSize = 8.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = showAddMenu,
-                        onDismissRequest = { showAddMenu = false },
-                        containerColor = StudioSurface
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Import Video from Phone...", color = ResolveCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                            leadingIcon = { Icon(Icons.Default.VideoLibrary, contentDescription = null, tint = ResolveCyan, modifier = Modifier.size(16.dp)) },
-                            onClick = {
-                                showAddMenu = false
-                                onImportVideoClip()
-                            }
-                        )
-                        HorizontalDivider(color = StudioCardBorder)
-                        SampleScene.values().forEach { scene ->
-                            DropdownMenuItem(
-                                text = { Text("+ ${scene.sceneName.removePrefix("S24 Ultra Log: ")}", color = TextPrimary, fontSize = 11.sp) },
-                                leadingIcon = { Icon(Icons.Default.Movie, contentDescription = null, tint = ResolveAmber, modifier = Modifier.size(15.dp)) },
-                                onClick = {
-                                    showAddMenu = false
-                                    onAddSampleClip(scene)
-                                }
-                            )
-                        }
+                        Icon(Icons.Default.Add, contentDescription = "Add Clip", tint = ResolveAmber, modifier = Modifier.size(13.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("CLIP", color = ResolveAmber, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                     }
                 }
             }

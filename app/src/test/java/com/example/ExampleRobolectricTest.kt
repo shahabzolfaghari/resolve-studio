@@ -85,6 +85,19 @@ class ExampleRobolectricTest {
     val app = ApplicationProvider.getApplicationContext<android.app.Application>()
     val vm = com.example.ui.GradingViewModel(app)
 
+    // Startup starts clean with zero synthetic placeholder clips and 100% neutral grade
+    assertEquals(0, vm.timelineClips.value.size)
+    assertEquals(com.example.model.LutPreset.NONE, vm.gradeSettings.value.activeLut)
+    assertEquals(false, vm.gradeSettings.value.samsungLogTransform)
+    assertEquals(false, vm.gradeSettings.value.cstNode.enabled)
+
+    // Populate 4 clips to test multi-clip timeline independent grades and copy/paste
+    vm.addClipToTimeline(com.example.video.SampleScene.S24_LOG_SUNSET_PORTRAIT)
+    vm.addClipToTimeline(com.example.video.SampleScene.S24_LOG_NEON_CYBERPUNK)
+    vm.addClipToTimeline(com.example.video.SampleScene.S24_LOG_FOREST_STREAM)
+    vm.addClipToTimeline(com.example.video.SampleScene.S24_LOG_STUDIO_CHART)
+    vm.selectTimelineClip(0)
+
     assertEquals(4, vm.timelineClips.value.size)
     assertEquals(0, vm.activeClipIndex.value)
 

@@ -134,9 +134,9 @@ fun PowerWindowControls(
                         Text(
                             text = label,
                             color = if (isSelected) ResolveAmber else TextSecondary,
-                            fontSize = 9.sp,
+                            fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            modifier = Modifier.padding(vertical = 6.dp),
+                            modifier = Modifier.padding(vertical = 8.dp),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
@@ -144,7 +144,7 @@ fun PowerWindowControls(
             }
 
             if (mask.type != MaskType.NONE) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 if (mask.type == MaskType.CUSTOM_BEZIER) {
                     // ==========================================
@@ -157,20 +157,20 @@ fun PowerWindowControls(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(6.dp))
                             .background(Color(0xFF141923))
-                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Gesture,
                                 contentDescription = null,
                                 tint = ResolveCyan,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(16.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "${mask.bezierPoints.size} Nodes",
                                 color = ResolveCyan,
-                                fontSize = 10.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -198,16 +198,16 @@ fun PowerWindowControls(
                                     onMaskChange(mask.copy(bezierPoints = pts, selectedPointIndex = idx + 1))
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E2638)),
-                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
-                                shape = RoundedCornerShape(4.dp),
-                                modifier = Modifier.height(24.dp).testTag("bezier_add_point_btn")
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                shape = RoundedCornerShape(6.dp),
+                                modifier = Modifier.height(30.dp).testTag("bezier_add_point_btn")
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = ResolveAmber, modifier = Modifier.size(11.dp))
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text("Add", color = ResolveAmber, fontSize = 9.sp)
+                                Icon(Icons.Default.Add, contentDescription = null, tint = ResolveAmber, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Add", color = ResolveAmber, fontSize = 11.sp)
                             }
 
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
 
                             // Delete Selected Node Button
                             Button(
@@ -222,25 +222,25 @@ fun PowerWindowControls(
                                 },
                                 enabled = mask.bezierPoints.size > 3,
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF261D22)),
-                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
-                                shape = RoundedCornerShape(4.dp),
-                                modifier = Modifier.height(24.dp).testTag("bezier_del_point_btn")
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                shape = RoundedCornerShape(6.dp),
+                                modifier = Modifier.height(30.dp).testTag("bezier_del_point_btn")
                             ) {
-                                Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = if (mask.bezierPoints.size > 3) Color(0xFFF87171) else TextMuted, modifier = Modifier.size(11.dp))
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text("Del", color = if (mask.bezierPoints.size > 3) Color(0xFFF87171) else TextMuted, fontSize = 9.sp)
+                                Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = if (mask.bezierPoints.size > 3) Color(0xFFF87171) else TextMuted, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Del", color = if (mask.bezierPoints.size > 3) Color(0xFFF87171) else TextMuted, fontSize = 11.sp)
                             }
 
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
 
                             // Reset Bezier Button
                             IconButton(
                                 onClick = {
                                     onMaskChange(mask.copy(bezierPoints = com.example.model.defaultBezierPoints(), selectedPointIndex = 0))
                                 },
-                                modifier = Modifier.size(24.dp).testTag("bezier_reset_btn")
+                                modifier = Modifier.size(30.dp).testTag("bezier_reset_btn")
                             ) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Reset Bezier", tint = TextMuted, modifier = Modifier.size(13.dp))
+                                Icon(Icons.Default.Refresh, contentDescription = "Reset Bezier", tint = TextMuted, modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -248,52 +248,49 @@ fun PowerWindowControls(
                     Spacer(modifier = Modifier.height(6.dp))
                 } else {
                     // Width Radius Slider
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Width", color = TextSecondary, fontSize = 10.sp, modifier = Modifier.width(55.dp))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            Text("Width Radius", color = TextPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                            Text(String.format("%.2f", mask.radiusX), color = ResolveAmber, fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                        }
                         Slider(
                             value = mask.radiusX,
                             onValueChange = { onMaskChange(mask.copy(radiusX = it)) },
                             valueRange = 0.05f..0.55f,
                             colors = SliderDefaults.colors(thumbColor = ResolveAmber, activeTrackColor = ResolveAmber),
-                            modifier = Modifier.weight(1f).testTag("mask_width_slider")
+                            modifier = Modifier.fillMaxWidth().height(34.dp).testTag("mask_width_slider")
                         )
-                        Text(String.format("%.2f", mask.radiusX), color = TextPrimary, fontSize = 10.sp, modifier = Modifier.width(36.dp))
                     }
 
                     // Height Radius Slider
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Height", color = TextSecondary, fontSize = 10.sp, modifier = Modifier.width(55.dp))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            Text("Height Radius", color = TextPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                            Text(String.format("%.2f", mask.radiusY), color = ResolveAmber, fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                        }
                         Slider(
                             value = mask.radiusY,
                             onValueChange = { onMaskChange(mask.copy(radiusY = it)) },
                             valueRange = 0.05f..0.55f,
                             colors = SliderDefaults.colors(thumbColor = ResolveAmber, activeTrackColor = ResolveAmber),
-                            modifier = Modifier.weight(1f).testTag("mask_height_slider")
+                            modifier = Modifier.fillMaxWidth().height(34.dp).testTag("mask_height_slider")
                         )
-                        Text(String.format("%.2f", mask.radiusY), color = TextPrimary, fontSize = 10.sp, modifier = Modifier.width(36.dp))
                     }
                 }
 
                 // Feather Softness Slider (Applies to all mask shapes including Bezier)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Feather", color = TextSecondary, fontSize = 10.sp, modifier = Modifier.width(55.dp))
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Feather Softness", color = TextPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                        Text(String.format("%.2f", mask.feather), color = ResolveCyan, fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                    }
                     Slider(
                         value = mask.feather,
                         onValueChange = { onMaskChange(mask.copy(feather = it)) },
                         valueRange = 0.02f..0.6f,
                         colors = SliderDefaults.colors(thumbColor = ResolveCyan, activeTrackColor = ResolveCyan),
-                        modifier = Modifier.weight(1f).testTag("mask_feather_slider")
+                        modifier = Modifier.fillMaxWidth().height(34.dp).testTag("mask_feather_slider")
                     )
-                    Text(String.format("%.2f", mask.feather), color = TextPrimary, fontSize = 10.sp, modifier = Modifier.width(36.dp))
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -312,7 +309,7 @@ fun PowerWindowControls(
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("power_window_tracker_console")
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp)) {
+                    Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -323,13 +320,13 @@ fun PowerWindowControls(
                                     imageVector = Icons.Default.TrackChanges,
                                     contentDescription = "Window Tracker",
                                     tint = if (isTracking || mask.trackingKeyframes.isNotEmpty()) Color(0xFF10B981) else ResolveCyan,
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
-                                Spacer(modifier = Modifier.width(5.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "CLOUD TRACKER",
                                     color = TextPrimary,
-                                    fontSize = 9.5.sp,
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 0.7.sp
                                 )
@@ -352,20 +349,20 @@ fun PowerWindowControls(
                                         else -> String.format("X:%.2f Y:%.2f", mask.centerX, mask.centerY)
                                     },
                                     color = if (isTracking || mask.trackingKeyframes.isNotEmpty()) Color(0xFF10B981) else ResolveCyan,
-                                    fontSize = 8.5.sp,
+                                    fontSize = 10.5.sp,
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         // Transport Buttons: Track Reverse, Step +1, Track Forward / Stop, Clear Track
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             // Track Backward / Stop
@@ -383,19 +380,19 @@ fun PowerWindowControls(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.padding(vertical = 5.dp)
+                                    modifier = Modifier.padding(vertical = 7.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (isTracking && trackingDirection < 0) Icons.Default.Stop else Icons.Default.FastRewind,
                                         contentDescription = null,
                                         tint = if (isTracking && trackingDirection < 0) ResolveRed else ResolveCyan,
-                                        modifier = Modifier.size(12.dp)
+                                        modifier = Modifier.size(14.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = if (isTracking && trackingDirection < 0) "Stop" else "Track Rev",
                                         color = if (isTracking && trackingDirection < 0) ResolveRed else TextPrimary,
-                                        fontSize = 8.5.sp,
+                                        fontSize = 10.5.sp,
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 }
@@ -414,11 +411,11 @@ fun PowerWindowControls(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.padding(vertical = 5.dp)
+                                    modifier = Modifier.padding(vertical = 7.dp)
                                 ) {
-                                    Icon(Icons.Default.SkipNext, contentDescription = null, tint = ResolveAmber, modifier = Modifier.size(12.dp))
-                                    Spacer(modifier = Modifier.width(2.dp))
-                                    Text("+1 Frame", color = ResolveAmber, fontSize = 8.5.sp, fontWeight = FontWeight.SemiBold)
+                                    Icon(Icons.Default.SkipNext, contentDescription = null, tint = ResolveAmber, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("+1 Frame", color = ResolveAmber, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
                                 }
                             }
 
@@ -437,19 +434,19 @@ fun PowerWindowControls(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.padding(vertical = 5.dp)
+                                    modifier = Modifier.padding(vertical = 7.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (isTracking && trackingDirection > 0) Icons.Default.Stop else Icons.Default.PlayArrow,
                                         contentDescription = null,
                                         tint = if (isTracking && trackingDirection > 0) ResolveRed else Color(0xFF10B981),
-                                        modifier = Modifier.size(13.dp)
+                                        modifier = Modifier.size(15.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = if (isTracking && trackingDirection > 0) "Stop" else "Track Fwd",
                                         color = if (isTracking && trackingDirection > 0) ResolveRed else Color(0xFF10B981),
-                                        fontSize = 8.5.sp,
+                                        fontSize = 10.5.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -468,9 +465,9 @@ fun PowerWindowControls(
                                 Text(
                                     text = "Clear",
                                     color = TextMuted,
-                                    fontSize = 8.5.sp,
+                                    fontSize = 10.5.sp,
                                     fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
                                 )
                             }
                         }
@@ -490,26 +487,26 @@ fun PowerWindowControls(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                     Icon(
                         imageVector = Icons.Default.Colorize,
                         contentDescription = "HSL Qualifier",
                         tint = ResolveCyan,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Column {
                         Text(
                             text = "3D HSL QUALIFIER (SECONDARY KEY)",
                             color = TextPrimary,
-                            fontSize = 10.5.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.8.sp
                         )
                         Text(
                             text = "Isolate Skin Tones, Sky, Foliage or Neon by Hue/Sat/Lum",
                             color = TextMuted,
-                            fontSize = 8.5.sp
+                            fontSize = 10.5.sp
                         )
                     }
                 }
@@ -519,12 +516,12 @@ fun PowerWindowControls(
                         FilterChip(
                             selected = hslQualifier.showMatte,
                             onClick = { onHslQualifierChange(hslQualifier.copy(showMatte = !hslQualifier.showMatte)) },
-                            label = { Text("Highlight", fontSize = 9.sp) },
+                            label = { Text("Highlight", fontSize = 11.sp) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = ResolveAmber.copy(alpha = 0.25f),
                                 selectedLabelColor = ResolveAmber
                             ),
-                            modifier = Modifier.height(26.dp).testTag("hsl_matte_toggle")
+                            modifier = Modifier.height(30.dp).testTag("hsl_matte_toggle")
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                     }
@@ -542,7 +539,7 @@ fun PowerWindowControls(
             }
 
             if (hslQualifier.enabled) {
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // 1-Tap Color Target Presets (Skin Tones, Sky & Cyan, Foliage Green, Neon Magenta, Golden Amber)
                 Row(
@@ -576,22 +573,22 @@ fun PowerWindowControls(
                             Text(
                                 text = preset.displayName,
                                 color = if (isSelected) ResolveCyan else TextSecondary,
-                                fontSize = 9.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Rainbow Hue Spectrum Bar
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(10.dp)
-                        .clip(RoundedCornerShape(5.dp))
+                        .height(12.dp)
+                        .clip(RoundedCornerShape(6.dp))
                         .background(
                             Brush.horizontalGradient(
                                 colors = listOf(
@@ -608,66 +605,78 @@ fun PowerWindowControls(
                         )
                 )
 
+                Spacer(modifier = Modifier.height(6.dp))
+
                 // Hue Center & Width Sliders
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("Hue Center", color = TextSecondary, fontSize = 9.5.sp, modifier = Modifier.width(65.dp))
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Hue Center", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("${hslQualifier.hueCenterDeg.toInt()}°", color = ResolveCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                    }
                     Slider(
                         value = hslQualifier.hueCenterDeg,
                         onValueChange = { onHslQualifierChange(hslQualifier.copy(hueCenterDeg = it)) },
                         valueRange = 0f..360f,
                         colors = SliderDefaults.colors(thumbColor = ResolveCyan, activeTrackColor = ResolveCyan),
-                        modifier = Modifier.weight(1f).height(24.dp).testTag("hsl_hue_center_slider")
+                        modifier = Modifier.fillMaxWidth().height(34.dp).testTag("hsl_hue_center_slider")
                     )
-                    Text("${hslQualifier.hueCenterDeg.toInt()}°", color = ResolveCyan, fontSize = 9.5.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(36.dp))
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("Hue Width", color = TextSecondary, fontSize = 9.5.sp, modifier = Modifier.width(65.dp))
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Hue Width", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("${hslQualifier.hueWidthDeg.toInt()}°", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                    }
                     Slider(
                         value = hslQualifier.hueWidthDeg,
                         onValueChange = { onHslQualifierChange(hslQualifier.copy(hueWidthDeg = it)) },
                         valueRange = 8f..120f,
                         colors = SliderDefaults.colors(thumbColor = ResolveCyan, activeTrackColor = ResolveCyan),
-                        modifier = Modifier.weight(1f).height(24.dp).testTag("hsl_hue_width_slider")
+                        modifier = Modifier.fillMaxWidth().height(34.dp).testTag("hsl_hue_width_slider")
                     )
-                    Text("${hslQualifier.hueWidthDeg.toInt()}°", color = TextPrimary, fontSize = 9.5.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(36.dp))
                 }
 
-                // Isolated Color Refinement Sliders (Hue Shift, Sat, Lum, Warmth)
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("Key Hue", color = TextSecondary, fontSize = 9.5.sp, modifier = Modifier.width(65.dp))
+                // Isolated Color Refinement Sliders (Hue Shift, Sat, Lum)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Key Hue Shift", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("${hslQualifier.hueShiftDeg.toInt()}°", color = ResolveAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                    }
                     Slider(
                         value = hslQualifier.hueShiftDeg,
                         onValueChange = { onHslQualifierChange(hslQualifier.copy(hueShiftDeg = it)) },
                         valueRange = -60f..60f,
                         colors = SliderDefaults.colors(thumbColor = ResolveAmber, activeTrackColor = ResolveAmber),
-                        modifier = Modifier.weight(1f).height(24.dp).testTag("hsl_hue_shift_slider")
+                        modifier = Modifier.fillMaxWidth().height(34.dp).testTag("hsl_hue_shift_slider")
                     )
-                    Text("${hslQualifier.hueShiftDeg.toInt()}°", color = ResolveAmber, fontSize = 9.5.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(36.dp))
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("Key Sat", color = TextSecondary, fontSize = 9.5.sp, modifier = Modifier.width(65.dp))
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Key Saturation", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(String.format("%.2fx", hslQualifier.satAdjust), color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                    }
                     Slider(
                         value = hslQualifier.satAdjust,
                         onValueChange = { onHslQualifierChange(hslQualifier.copy(satAdjust = it)) },
                         valueRange = 0f..2f,
                         colors = SliderDefaults.colors(thumbColor = ResolveAmber, activeTrackColor = ResolveAmber),
-                        modifier = Modifier.weight(1f).height(24.dp).testTag("hsl_sat_adjust_slider")
+                        modifier = Modifier.fillMaxWidth().height(34.dp).testTag("hsl_sat_adjust_slider")
                     )
-                    Text(String.format("%.2fx", hslQualifier.satAdjust), color = TextPrimary, fontSize = 9.5.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(36.dp))
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("Key Lum", color = TextSecondary, fontSize = 9.5.sp, modifier = Modifier.width(65.dp))
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Key Luminance", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(String.format("%+.2f", hslQualifier.lumAdjust), color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                    }
                     Slider(
                         value = hslQualifier.lumAdjust,
                         onValueChange = { onHslQualifierChange(hslQualifier.copy(lumAdjust = it)) },
                         valueRange = -0.5f..0.5f,
                         colors = SliderDefaults.colors(thumbColor = ResolveAmber, activeTrackColor = ResolveAmber),
-                        modifier = Modifier.weight(1f).height(24.dp).testTag("hsl_lum_adjust_slider")
+                        modifier = Modifier.fillMaxWidth().height(34.dp).testTag("hsl_lum_adjust_slider")
                     )
-                    Text(String.format("%+.2f", hslQualifier.lumAdjust), color = TextPrimary, fontSize = 9.5.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(36.dp))
                 }
             }
         }

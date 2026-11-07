@@ -41,42 +41,11 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
     private val _currentTimeMs = MutableStateFlow(0L)
     val currentTimeMs = _currentTimeMs.asStateFlow()
 
-    private val _totalDurationMs = MutableStateFlow(12_000L) // 12s multi-clip sequence default
+    private val _totalDurationMs = MutableStateFlow(0L)
     val totalDurationMs = _totalDurationMs.asStateFlow()
 
-    // Multi-Clip Timeline State (DaVinci Resolve Color Page Clip Strip)
-    private val _timelineClips = MutableStateFlow<List<TimelineClip>>(
-        listOf(
-            TimelineClip(
-                clipNumber = 1,
-                title = "Sunset Portrait",
-                subtitle = "Golden hour skin",
-                sceneName = SampleScene.S24_LOG_SUNSET_PORTRAIT.name,
-                durationMs = 3_000L
-            ),
-            TimelineClip(
-                clipNumber = 2,
-                title = "Tokyo Cyber Neon",
-                subtitle = "Neon speculars",
-                sceneName = SampleScene.S24_LOG_NEON_CITY.name,
-                durationMs = 3_000L
-            ),
-            TimelineClip(
-                clipNumber = 3,
-                title = "Mountain Vista",
-                subtitle = "Foliage & sky",
-                sceneName = SampleScene.S24_LOG_ALPINE_LAKE.name,
-                durationMs = 3_000L
-            ),
-            TimelineClip(
-                clipNumber = 4,
-                title = "Film Noir Studio",
-                subtitle = "Tungsten key",
-                sceneName = SampleScene.S24_LOG_CINEMA_INTERIOR.name,
-                durationMs = 3_000L
-            )
-        )
-    )
+    // Multi-Clip Timeline State (Starts empty — no synthetic placeholder images)
+    private val _timelineClips = MutableStateFlow<List<TimelineClip>>(emptyList())
     val timelineClips = _timelineClips.asStateFlow()
 
     private val _activeClipIndex = MutableStateFlow(0)
@@ -131,12 +100,21 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
     private var playbackJob: Job? = null
     private var gradeJob: Job? = null
     private var frameExtractJob: Job? = null
+    private var proxyPreloadJob: Job? = null
     private var importedVideoUri: Uri? = null
     private var cachedRetriever: MediaMetadataRetriever? = null
     private val retrieverLock = Any()
 
+    // Pre-decoded 30 FPS proxy frame ring cache & double-buffered output bitmaps (prevents OOM & GC stalls)
+    private val proxyCacheSize = 90
+    private var proxyFrameCache = arrayOfNulls<Bitmap>(proxyCacheSize)
+    private var proxyCacheUriString: String? = null
+    private var gradedBufferA: Bitmap? = null
+    private var gradedBufferB: Bitmap? = null
+    private var useBufferA: Boolean = true
+    private var playbackFrameCounter: Int = 0
+
     init {
-        loadScene(SampleScene.S24_LOG_SUNSET_PORTRAIT)
         syncUndoRedoState()
     }
 
@@ -329,6 +307,7 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun releaseCachedRetriever() {
+        proxyPreloadJob?.cancel()
         synchronized(retrieverLock) {
             try {
                 cachedRetriever?.release()
@@ -337,44 +316,189 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /**
+     * Safely extracts a scaled ARGB_8888 software Bitmap from MediaMetadataRetriever.
+     * Avoids decoding full 4K 33MB bitmaps and converts Config.HARDWARE bitmaps to ARGB_8888.
+     */
+    private fun extractScaledFrameLocked(
+        retriever: MediaMetadataRetriever,
+        timeUs: Long,
+        maxDimension: Int = 960,
+        option: Int = MediaMetadataRetriever.OPTION_CLOSEST
+    ): Bitmap? {
+        return try {
+            val rawW = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 1280
+            val rawH = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 720
+            val rot = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
+            val effectiveW = if (rot == 90 || rot == 270) rawH else rawW
+            val effectiveH = if (rot == 90 || rot == 270) rawW else rawH
+
+            val scale = (maxDimension.toFloat() / kotlin.math.max(effectiveW, effectiveH).coerceAtLeast(1)).coerceAtMost(1.0f)
+            val dstW = ((effectiveW * scale).toInt() and 0xFFFE).coerceAtLeast(64)
+            val dstH = ((effectiveH * scale).toInt() and 0xFFFE).coerceAtLeast(64)
+
+            val extracted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+                retriever.getScaledFrameAtTime(timeUs, option, dstW, dstH)
+                    ?: retriever.getScaledFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, dstW, dstH)
+            } else {
+                val full = retriever.getFrameAtTime(timeUs, option)
+                    ?: retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                if (full != null && (full.width > dstW || full.height > dstH)) {
+                    val softFull = SamsungLogColorScience.ensureSoftwareBitmap(full)
+                    Bitmap.createScaledBitmap(softFull, dstW, dstH, true)
+                } else {
+                    full
+                }
+            }
+            extracted?.let { SamsungLogColorScience.ensureSoftwareBitmap(it) }
+        } catch (_: Exception) {
+            try {
+                retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                    ?.let { SamsungLogColorScience.ensureSoftwareBitmap(it) }
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         releaseCachedRetriever()
+        proxyFrameCache.fill(null)
     }
 
     fun onImportVideoUri(uri: Uri) {
+        _isPlaying.value = false
+        playbackJob?.cancel()
+        frameExtractJob?.cancel()
+        proxyPreloadJob?.cancel()
+
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                try {
+                    getApplication<Application>().contentResolver.takePersistableUriPermission(
+                        uri,
+                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Exception) {}
+
                 importedVideoUri = uri
                 releaseCachedRetriever()
+
                 val retriever = MediaMetadataRetriever()
                 retriever.setDataSource(getApplication(), uri)
                 val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                val durMs = (durationStr?.toLongOrNull() ?: 5000L).coerceIn(1000L, 60_000L)
+                val durMs = (durationStr?.toLongOrNull() ?: 5000L).coerceIn(500L, 180_000L)
 
-                val newClip = TimelineClip(
-                    clipNumber = _timelineClips.value.size + 1,
-                    title = "Imported S24 Clip",
-                    subtitle = "10-bit Log Video",
-                    importedUriString = uri.toString(),
-                    durationMs = durMs,
-                    settings = _gradeSettings.value
-                )
-                val updated = _timelineClips.value + newClip
-                _timelineClips.value = updated
-                _activeClipIndex.value = updated.size - 1
-                recalculateTimelineDuration()
-
-                val frame = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-                if (frame != null) {
-                    _rawFrameBitmap.value = frame
-                    triggerGrade()
-                }
                 synchronized(retrieverLock) {
                     cachedRetriever = retriever
                 }
+
+                // Always start imported video clips with 100% neutral/unmodified ColorGradeSettings (no LUT, no edits)
+                val neutralSettings = ColorGradeSettings()
+                val existingRealClips = _timelineClips.value.filter { it.importedUriString != null }
+                val newClipNumber = existingRealClips.size + 1
+                val newClip = TimelineClip(
+                    clipNumber = newClipNumber,
+                    title = "Video Clip %02d".format(newClipNumber),
+                    subtitle = "%.1fs Source".format(durMs / 1000f),
+                    importedUriString = uri.toString(),
+                    durationMs = durMs,
+                    settings = neutralSettings
+                )
+                val updated = existingRealClips + newClip
+                val newClipIndex = updated.size - 1
+                val startOffsetMs = existingRealClips.sumOf { it.durationMs }
+
+                _timelineClips.value = updated
+                _activeClipIndex.value = newClipIndex
+                _gradeSettings.value = neutralSettings
+                undoRedoManager.reset(neutralSettings)
+                syncUndoRedoState()
+                recalculateTimelineDuration()
+                _currentTimeMs.value = startOffsetMs
+
+                // Extract initial frame fast (OPTION_CLOSEST_SYNC at 960p) so UI never hangs
+                val firstFrame = synchronized(retrieverLock) {
+                    extractScaledFrameLocked(
+                        retriever = retriever,
+                        timeUs = 0L,
+                        maxDimension = 960,
+                        option = MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+                    )
+                }
+
+                if (firstFrame != null) {
+                    _rawFrameBitmap.value = firstFrame
+                    _gradedFrameBitmap.value = getNextGradedBuffer(firstFrame.width, firstFrame.height).also { dst ->
+                        SamsungLogColorScience.gradeBitmap(firstFrame, neutralSettings, destination = dst)
+                    }
+                    // Pre-populate slot 0 in proxy cache
+                    proxyFrameCache.fill(null)
+                    proxyCacheUriString = uri.toString()
+                    proxyFrameCache[0] = firstFrame
+                    triggerGrade()
+                }
+
+                // Pre-decode smooth 30 FPS proxy frames in background for zero-lag playback
+                startProxyPreload(uri, durMs)
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    private fun startProxyPreload(uri: Uri, durationMs: Long) {
+        proxyPreloadJob?.cancel()
+        proxyPreloadJob = viewModelScope.launch(Dispatchers.IO) {
+            val uriStr = uri.toString()
+            if (proxyCacheUriString != uriStr) {
+                proxyFrameCache.fill(null)
+                proxyCacheUriString = uriStr
+            }
+            val totalSlots = proxyCacheSize
+            // First pass: decode every 3rd slot so full clip is scrubbed within 400ms
+            // Second pass: fill remaining intermediate slots for silky 30 FPS playback
+            val passOrder = (0 until totalSlots step 3).toList() + (0 until totalSlots).filter { it % 3 != 0 }
+            for (slot in passOrder) {
+                if (!isActive || importedVideoUri != uri) break
+                if (proxyFrameCache[slot] != null) continue
+                val timeUs = ((slot.toFloat() / totalSlots) * durationMs * 1000L).toLong()
+                val bmp = synchronized(retrieverLock) {
+                    val r = cachedRetriever ?: return@synchronized null
+                    extractScaledFrameLocked(
+                        retriever = r,
+                        timeUs = timeUs,
+                        maxDimension = 640,
+                        option = MediaMetadataRetriever.OPTION_CLOSEST
+                    )
+                }
+                if (bmp != null && isActive) {
+                    proxyFrameCache[slot] = bmp
+                }
+                yield()
+            }
+        }
+    }
+
+    private fun getNextGradedBuffer(width: Int, height: Int): Bitmap {
+        val w = width.coerceAtLeast(1)
+        val h = height.coerceAtLeast(1)
+        return if (useBufferA) {
+            useBufferA = false
+            val cur = gradedBufferA
+            if (cur != null && !cur.isRecycled && cur.width == w && cur.height == h) {
+                cur
+            } else {
+                Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { gradedBufferA = it }
+            }
+        } else {
+            useBufferA = true
+            val cur = gradedBufferB
+            if (cur != null && !cur.isRecycled && cur.width == w && cur.height == h) {
+                cur
+            } else {
+                Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { gradedBufferB = it }
             }
         }
     }
@@ -422,7 +546,7 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
     fun deleteCustomLut(lutId: String) {
         val current = _gradeSettings.value
         val updatedList = current.customLuts.filterNot { it.id == lutId }
-        val newActive = if (current.selectedCustomLutId == lutId) LutPreset.SAMSUNG_LOG_TO_REC709 else current.activeLut
+        val newActive = if (current.selectedCustomLutId == lutId) LutPreset.NONE else current.activeLut
         val newSelectedId = if (current.selectedCustomLutId == lutId) null else current.selectedCustomLutId
         updateSettings(description = "Delete Custom LUT", immediateCommit = true) {
             it.copy(
@@ -476,9 +600,11 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun togglePlayPause() {
+        if (_rawFrameBitmap.value == null && _timelineClips.value.isEmpty()) return
         if (_isPlaying.value) {
             _isPlaying.value = false
             playbackJob?.cancel()
+            updateFrameForTime(_currentTimeMs.value)
         } else {
             _isPlaying.value = true
             startPlaybackLoop()
@@ -507,7 +633,7 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
         val newTime = (_currentTimeMs.value + direction * frameMs).coerceIn(0L, _totalDurationMs.value)
         _currentTimeMs.value = newTime
 
-        // B-2: Ensure the frame is extracted before tracking (synchronous extraction for imported video)
+        // B-2: Ensure the frame is extracted before tracking (scaled software bitmap for imported video)
         val raw = if (importedVideoUri != null) {
             val (_, localTime) = resolveClipAndTime(newTime)
             val extracted = synchronized(retrieverLock) {
@@ -515,7 +641,12 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
                     it.setDataSource(getApplication(), importedVideoUri)
                     cachedRetriever = it
                 }
-                r.getFrameAtTime(localTime * 1000L, MediaMetadataRetriever.OPTION_CLOSEST)
+                extractScaledFrameLocked(
+                    retriever = r,
+                    timeUs = localTime * 1000L,
+                    maxDimension = 640,
+                    option = MediaMetadataRetriever.OPTION_CLOSEST
+                )
             }
             if (extracted != null) {
                 _rawFrameBitmap.value = extracted
@@ -625,17 +756,123 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
 
     private fun startPlaybackLoop() {
         playbackJob?.cancel()
+        frameExtractJob?.cancel()
         playbackJob = viewModelScope.launch(Dispatchers.Default) {
-            val frameIntervalMs = 33L
+            val frameIntervalMs = 33L // Locked 30 FPS target
             while (isActive && _isPlaying.value) {
+                val tickStartMs = android.os.SystemClock.elapsedRealtime()
+                val totalDur = _totalDurationMs.value.coerceAtLeast(100L)
                 var newTime = _currentTimeMs.value + frameIntervalMs
-                if (newTime >= _totalDurationMs.value) {
-                    newTime = 0L // Loop
+                if (newTime >= totalDur) {
+                    newTime = 0L // Loop smoothly within real timeline clips
                 }
                 _currentTimeMs.value = newTime
-                updateFrameForTime(newTime)
-                delay(frameIntervalMs)
+
+                // Render sequentially in this loop so coroutines and bitmaps NEVER pile up or OOM
+                renderPlaybackTickSequential(newTime)
+
+                val elapsedMs = android.os.SystemClock.elapsedRealtime() - tickStartMs
+                val waitMs = (frameIntervalMs - elapsedMs).coerceAtLeast(2L)
+                delay(waitMs)
             }
+        }
+    }
+
+    private suspend fun renderPlaybackTickSequential(timeMs: Long) {
+        val (resolvedIndex, localTimeMs) = resolveClipAndTime(timeMs)
+        val clips = _timelineClips.value
+
+        if (clips.isNotEmpty() && resolvedIndex != _activeClipIndex.value) {
+            syncActiveClipSettings(_gradeSettings.value)
+            _activeClipIndex.value = resolvedIndex
+            val nextClip = clips[resolvedIndex]
+            _gradeSettings.value = nextClip.settings
+            if (nextClip.importedUriString != null) {
+                val nextUri = Uri.parse(nextClip.importedUriString)
+                if (importedVideoUri != nextUri) {
+                    importedVideoUri = nextUri
+                    releaseCachedRetriever()
+                    withContext(Dispatchers.IO) {
+                        synchronized(retrieverLock) {
+                            try {
+                                cachedRetriever = MediaMetadataRetriever().apply {
+                                    setDataSource(getApplication(), nextUri)
+                                }
+                            } catch (_: Exception) {}
+                        }
+                    }
+                    startProxyPreload(nextUri, nextClip.durationMs)
+                }
+            } else {
+                importedVideoUri = null
+                releaseCachedRetriever()
+            }
+        }
+
+        val currentUri = importedVideoUri
+        if (currentUri != null) {
+            val clipDur = clips.getOrNull(resolvedIndex)?.durationMs?.coerceAtLeast(500L)
+                ?: _totalDurationMs.value.coerceAtLeast(1000L)
+            val slot = (((localTimeMs.toFloat() / clipDur) * proxyCacheSize).toInt()).coerceIn(0, proxyCacheSize - 1)
+
+            // 1. Instant 0ms lookup from pre-decoded 30 FPS proxy frame cache
+            var frame = if (proxyCacheUriString == currentUri.toString()) {
+                proxyFrameCache[slot]
+                    ?: proxyFrameCache.getOrNull(slot - 1)
+                    ?: proxyFrameCache.getOrNull(slot + 1)
+            } else null
+
+            // 2. If slot isn't cached yet, decode a lightweight 640p proxy frame synchronously
+            if (frame == null) {
+                frame = withContext(Dispatchers.IO) {
+                    synchronized(retrieverLock) {
+                        val activeRetriever = cachedRetriever ?: MediaMetadataRetriever().also {
+                            it.setDataSource(getApplication(), currentUri)
+                            cachedRetriever = it
+                        }
+                        extractScaledFrameLocked(
+                            retriever = activeRetriever,
+                            timeUs = localTimeMs * 1000L,
+                            maxDimension = 640,
+                            option = MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+                        )
+                    }
+                }
+                if (frame != null && proxyCacheUriString == currentUri.toString()) {
+                    proxyFrameCache[slot] = frame
+                }
+            }
+
+            if (frame != null) {
+                _rawFrameBitmap.value = frame
+                applyTrackedKeyframeIfPresent(timeMs)
+                val destBuffer = getNextGradedBuffer(frame.width, frame.height)
+                val graded = SamsungLogColorScience.gradeBitmap(
+                    source = frame,
+                    settings = _gradeSettings.value,
+                    destination = destBuffer
+                )
+                _gradedFrameBitmap.value = graded
+
+                // Throttle scope calculations during 30 FPS playback to every 6th frame (5 Hz)
+                playbackFrameCounter++
+                if (playbackFrameCounter % 6 == 0) {
+                    _histogramData.value = SamsungLogColorScience.calculateHistogram(graded)
+                    _waveformData.value = SamsungLogColorScience.calculateWaveform(graded)
+                }
+            }
+        } else if (clips.isNotEmpty()) {
+            val frameIndex = (localTimeMs / 33L).toInt()
+            val raw = SampleMediaGenerator.generateLogFrame(_currentScene.value, frameIndex = frameIndex)
+            _rawFrameBitmap.value = raw
+            applyTrackedKeyframeIfPresent(timeMs)
+            val destBuffer = getNextGradedBuffer(raw.width, raw.height)
+            val graded = SamsungLogColorScience.gradeBitmap(
+                source = raw,
+                settings = _gradeSettings.value,
+                destination = destBuffer
+            )
+            _gradedFrameBitmap.value = graded
         }
     }
 
@@ -673,6 +910,7 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
                 if (importedVideoUri != nextUri) {
                     importedVideoUri = nextUri
                     releaseCachedRetriever()
+                    startProxyPreload(nextUri, nextClip.durationMs)
                 }
             } else {
                 importedVideoUri = null
@@ -685,27 +923,45 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
             }
         }
 
-        if (importedVideoUri != null) {
+        val currentUri = importedVideoUri
+        if (currentUri != null) {
+            val clipDur = clips.getOrNull(resolvedIndex)?.durationMs?.coerceAtLeast(500L)
+                ?: _totalDurationMs.value.coerceAtLeast(1000L)
+            val slot = (((localTimeMs.toFloat() / clipDur) * proxyCacheSize).toInt()).coerceIn(0, proxyCacheSize - 1)
+
+            // Instant cached preview while scrubbing
+            if (proxyCacheUriString == currentUri.toString()) {
+                val cached = proxyFrameCache[slot]
+                if (cached != null) {
+                    _rawFrameBitmap.value = cached
+                    applyTrackedKeyframeIfPresent(timeMs)
+                    triggerGrade()
+                }
+            }
+
             frameExtractJob?.cancel()
             frameExtractJob = viewModelScope.launch(Dispatchers.IO) {
                 try {
                     val frame = synchronized(retrieverLock) {
                         val activeRetriever = cachedRetriever ?: MediaMetadataRetriever().also {
-                            it.setDataSource(getApplication(), importedVideoUri)
+                            it.setDataSource(getApplication(), currentUri)
                             cachedRetriever = it
                         }
-                        activeRetriever.getFrameAtTime(localTimeMs * 1000L, MediaMetadataRetriever.OPTION_CLOSEST)
+                        extractScaledFrameLocked(
+                            retriever = activeRetriever,
+                            timeUs = localTimeMs * 1000L,
+                            maxDimension = 960,
+                            option = MediaMetadataRetriever.OPTION_CLOSEST
+                        )
                     }
-                    if (frame != null) {
+                    if (frame != null && isActive) {
                         _rawFrameBitmap.value = frame
-                        // B-3: Apply tracked keyframes for imported video as well as sample scenes
                         applyTrackedKeyframeIfPresent(timeMs)
                         triggerGrade()
                     }
                 } catch (_: Exception) {}
             }
-        } else {
-            // Generate animated frame for sample scene
+        } else if (clips.isNotEmpty() || _rawFrameBitmap.value != null) {
             val frameIndex = (localTimeMs / 33L).toInt()
             val raw = SampleMediaGenerator.generateLogFrame(_currentScene.value, frameIndex = frameIndex)
             _rawFrameBitmap.value = raw
@@ -766,9 +1022,11 @@ class GradingViewModel(application: Application) : AndroidViewModel(application)
             val raw = _rawFrameBitmap.value ?: return@launch
             // P-1: Use proxy bitmap for interactive preview when dimensions exceed 1280px
             val previewSource = if (raw.width > 1280) getOrCreateProxy(raw) else raw
+            val destBuffer = getNextGradedBuffer(previewSource.width, previewSource.height)
             val graded = SamsungLogColorScience.gradeBitmap(
                 source = previewSource,
                 settings = _gradeSettings.value,
+                destination = destBuffer,
                 isCancelled = { !isActive }
             )
             if (!isActive) return@launch

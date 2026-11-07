@@ -64,12 +64,13 @@ fun StudioDockContainer(
     showInternalTabBar: Boolean = false,
     showScopesExternal: Boolean? = null,
     onScopesExternalChange: ((Boolean) -> Unit)? = null,
+    initialUseLogWheels: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var monitorMode by remember { mutableStateOf(DockMonitorMode.FULL_TOOL) }
     var activeScopeMode by remember { mutableStateOf(ScopeMode.VECTORSCOPE) }
     var useGridWheels by remember { mutableStateOf(true) }
-    var useLogWheels by remember { mutableStateOf(false) }
+    var useLogWheels by remember { mutableStateOf(initialUseLogWheels) }
 
     // Synchronize external showScopes toggle with internal DockMonitorMode
     LaunchedEffect(showScopesExternal) {
@@ -106,7 +107,7 @@ fun StudioDockContainer(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFF0F1218))
-                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                    .padding(horizontal = 10.dp, vertical = 7.dp)
             ) {
                 // Title & Active Mode Badge
                 Row(
@@ -117,27 +118,27 @@ fun StudioDockContainer(
                         imageVector = Icons.Default.Tune,
                         contentDescription = null,
                         tint = ResolveAmber,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "DOCK",
                         color = TextPrimary,
-                        fontSize = 10.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.6.sp,
                         maxLines = 1,
                         softWrap = false
                     )
 
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     // Channel Readout Pill
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(5.dp))
                             .background(Color(0xFF1F2634))
-                            .padding(horizontal = 5.dp, vertical = 2.dp)
+                            .padding(horizontal = 7.dp, vertical = 3.dp)
                     ) {
                         Text(
                             text = when (activeTab) {
@@ -150,7 +151,7 @@ fun StudioDockContainer(
                                 StudioToolTab.EFFECTS -> "FILM FX"
                             },
                             color = ResolveAmber,
-                            fontSize = 8.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace,
                             maxLines = 1,
@@ -170,13 +171,13 @@ fun StudioDockContainer(
                         val isSelected = monitorMode == mode
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(5.dp))
                                 .background(if (isSelected) ResolveAmber.copy(alpha = 0.22f) else Color.Transparent)
                                 .clickable {
                                     monitorMode = mode
                                     onScopesExternalChange?.invoke(mode != DockMonitorMode.FULL_TOOL)
                                 }
-                                .padding(horizontal = 5.dp, vertical = 3.dp)
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
                                 .testTag("dock_monitor_mode_${mode.name.lowercase()}"),
                             contentAlignment = Alignment.Center
                         ) {
@@ -185,13 +186,13 @@ fun StudioDockContainer(
                                     imageVector = mode.icon,
                                     contentDescription = mode.label,
                                     tint = if (isSelected) ResolveAmber else TextMuted,
-                                    modifier = Modifier.size(12.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
-                                Spacer(modifier = Modifier.width(3.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = mode.label,
                                     color = if (isSelected) ResolveAmber else TextSecondary,
-                                    fontSize = 8.sp,
+                                    fontSize = 10.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                     maxLines = 1,
                                     softWrap = false
@@ -202,12 +203,12 @@ fun StudioDockContainer(
                 }
 
                 if (showCollapseButton) {
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     IconButton(
                         onClick = onCollapseToFloating,
                         modifier = Modifier
-                            .size(24.dp)
-                            .clip(RoundedCornerShape(4.dp))
+                            .size(30.dp)
+                            .clip(RoundedCornerShape(6.dp))
                             .background(Color(0xFF171B24))
                             .testTag("collapse_dock_to_floating_button")
                     ) {
@@ -215,7 +216,7 @@ fun StudioDockContainer(
                             imageVector = Icons.Default.CloseFullscreen,
                             contentDescription = "Collapse Dock to Floating Menu",
                             tint = ResolveCyan,
-                            modifier = Modifier.size(13.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
@@ -325,44 +326,44 @@ fun StudioDockContainer(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        .padding(horizontal = 4.dp, vertical = 4.dp)
                                 ) {
                                     // Mode Switcher: [PRIMARIES] vs [LOG WHEELS]
                                     Row(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
+                                            .clip(RoundedCornerShape(8.dp))
                                             .background(Color(0xFF0E121A))
-                                            .border(1.dp, StudioCardBorder, RoundedCornerShape(6.dp))
-                                            .padding(1.5.dp)
+                                            .border(1.dp, StudioCardBorder, RoundedCornerShape(8.dp))
+                                            .padding(2.dp)
                                     ) {
                                         Surface(
                                             onClick = { useLogWheels = false },
                                             color = if (!useLogWheels) ResolveAmber.copy(alpha = 0.22f) else Color.Transparent,
-                                            shape = RoundedCornerShape(4.dp),
+                                            shape = RoundedCornerShape(6.dp),
                                             modifier = Modifier.testTag("wheels_mode_primaries")
                                         ) {
                                             Text(
                                                 text = "PRIMARIES",
                                                 color = if (!useLogWheels) ResolveAmber else TextSecondary,
-                                                fontSize = 8.5.sp,
+                                                fontSize = 11.5.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = FontFamily.Monospace,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                             )
                                         }
                                         Surface(
                                             onClick = { useLogWheels = true },
                                             color = if (useLogWheels) ResolveCyan.copy(alpha = 0.22f) else Color.Transparent,
-                                            shape = RoundedCornerShape(4.dp),
+                                            shape = RoundedCornerShape(6.dp),
                                             modifier = Modifier.testTag("wheels_mode_log")
                                         ) {
                                             Text(
                                                 text = "LOG WHEELS",
                                                 color = if (useLogWheels) ResolveCyan else TextSecondary,
-                                                fontSize = 8.5.sp,
+                                                fontSize = 11.5.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = FontFamily.Monospace,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                             )
                                         }
                                     }
@@ -370,44 +371,44 @@ fun StudioDockContainer(
                                     // Layout Switcher: 2x2 Grid (No Scroll Conflict) vs 4x1 Strip
                                     Row(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(5.dp))
+                                            .clip(RoundedCornerShape(8.dp))
                                             .background(Color(0xFF10131B))
-                                            .padding(1.5.dp)
+                                            .padding(2.dp)
                                     ) {
                                         Surface(
                                             onClick = { useGridWheels = true },
                                             color = if (useGridWheels) ResolveAmber.copy(alpha = 0.22f) else Color.Transparent,
-                                            shape = RoundedCornerShape(4.dp),
+                                            shape = RoundedCornerShape(6.dp),
                                             modifier = Modifier.testTag("wheels_layout_grid")
                                         ) {
                                             Text(
                                                 text = "2×2 GRID",
                                                 color = if (useGridWheels) ResolveAmber else TextMuted,
-                                                fontSize = 8.sp,
+                                                fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = FontFamily.Monospace,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                             )
                                         }
                                         Surface(
                                             onClick = { useGridWheels = false },
                                             color = if (!useGridWheels) ResolveAmber.copy(alpha = 0.22f) else Color.Transparent,
-                                            shape = RoundedCornerShape(4.dp),
+                                            shape = RoundedCornerShape(6.dp),
                                             modifier = Modifier.testTag("wheels_layout_strip")
                                         ) {
                                             Text(
                                                 text = "STRIP",
                                                 color = if (!useGridWheels) ResolveAmber else TextMuted,
-                                                fontSize = 8.sp,
+                                                fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = FontFamily.Monospace,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                             )
                                         }
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
 
                                 if (!useLogWheels) {
                                     // =========================================================
@@ -421,7 +422,7 @@ fun StudioDockContainer(
                                                     accentColor = WheelLiftColor,
                                                     value = settings.lift,
                                                     onValueChange = { newLift -> onSettingsChange("Adjust Lift (Shadows)") { it.copy(lift = newLift) } },
-                                                    wheelDiameter = 112.dp,
+                                                    wheelDiameter = 126.dp,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                                 ColorWheel(
@@ -429,7 +430,7 @@ fun StudioDockContainer(
                                                     accentColor = WheelGammaColor,
                                                     value = settings.gamma,
                                                     onValueChange = { newGamma -> onSettingsChange("Adjust Gamma (Midtones)") { it.copy(gamma = newGamma) } },
-                                                    wheelDiameter = 112.dp,
+                                                    wheelDiameter = 126.dp,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                             }
@@ -439,7 +440,7 @@ fun StudioDockContainer(
                                                     accentColor = WheelGainColor,
                                                     value = settings.gain,
                                                     onValueChange = { newGain -> onSettingsChange("Adjust Gain (Highlights)") { it.copy(gain = newGain) } },
-                                                    wheelDiameter = 112.dp,
+                                                    wheelDiameter = 126.dp,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                                 ColorWheel(
@@ -447,7 +448,7 @@ fun StudioDockContainer(
                                                     accentColor = WheelOffsetColor,
                                                     value = settings.offset,
                                                     onValueChange = { newOffset -> onSettingsChange("Adjust Offset") { it.copy(offset = newOffset) } },
-                                                    wheelDiameter = 112.dp,
+                                                    wheelDiameter = 126.dp,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                             }
@@ -464,7 +465,7 @@ fun StudioDockContainer(
                                                 accentColor = WheelLiftColor,
                                                 value = settings.lift,
                                                 onValueChange = { newLift -> onSettingsChange("Adjust Lift (Shadows)") { it.copy(lift = newLift) } },
-                                                modifier = Modifier.width(155.dp)
+                                                modifier = Modifier.width(172.dp)
                                             )
 
                                             ColorWheel(
@@ -472,7 +473,7 @@ fun StudioDockContainer(
                                                 accentColor = WheelGammaColor,
                                                 value = settings.gamma,
                                                 onValueChange = { newGamma -> onSettingsChange("Adjust Gamma (Midtones)") { it.copy(gamma = newGamma) } },
-                                                modifier = Modifier.width(155.dp)
+                                                modifier = Modifier.width(172.dp)
                                             )
 
                                             ColorWheel(
@@ -480,7 +481,7 @@ fun StudioDockContainer(
                                                 accentColor = WheelGainColor,
                                                 value = settings.gain,
                                                 onValueChange = { newGain -> onSettingsChange("Adjust Gain (Highlights)") { it.copy(gain = newGain) } },
-                                                modifier = Modifier.width(155.dp)
+                                                modifier = Modifier.width(172.dp)
                                             )
 
                                             ColorWheel(
@@ -488,7 +489,7 @@ fun StudioDockContainer(
                                                 accentColor = WheelOffsetColor,
                                                 value = settings.offset,
                                                 onValueChange = { newOffset -> onSettingsChange("Adjust Offset") { it.copy(offset = newOffset) } },
-                                                modifier = Modifier.width(155.dp)
+                                                modifier = Modifier.width(172.dp)
                                             )
                                         }
                                     }
@@ -509,7 +510,7 @@ fun StudioDockContainer(
                                                             it.copy(logWheels = it.logWheels.copy(shadow = newShadow))
                                                         }
                                                     },
-                                                    wheelDiameter = 112.dp,
+                                                    wheelDiameter = 126.dp,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                                 ColorWheel(
@@ -521,7 +522,7 @@ fun StudioDockContainer(
                                                             it.copy(logWheels = it.logWheels.copy(midtone = newMid))
                                                         }
                                                     },
-                                                    wheelDiameter = 112.dp,
+                                                    wheelDiameter = 126.dp,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                             }
@@ -535,7 +536,7 @@ fun StudioDockContainer(
                                                             it.copy(logWheels = it.logWheels.copy(highlight = newHi))
                                                         }
                                                     },
-                                                    wheelDiameter = 112.dp,
+                                                    wheelDiameter = 126.dp,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                                 ColorWheel(
@@ -547,7 +548,7 @@ fun StudioDockContainer(
                                                             it.copy(logWheels = it.logWheels.copy(offset = newOff))
                                                         }
                                                     },
-                                                    wheelDiameter = 112.dp,
+                                                    wheelDiameter = 126.dp,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                             }
@@ -568,7 +569,7 @@ fun StudioDockContainer(
                                                         it.copy(logWheels = it.logWheels.copy(shadow = newShadow))
                                                     }
                                                 },
-                                                modifier = Modifier.width(155.dp)
+                                                modifier = Modifier.width(172.dp)
                                             )
                                             ColorWheel(
                                                 title = "Midtone",
@@ -579,7 +580,7 @@ fun StudioDockContainer(
                                                         it.copy(logWheels = it.logWheels.copy(midtone = newMid))
                                                     }
                                                 },
-                                                modifier = Modifier.width(155.dp)
+                                                modifier = Modifier.width(172.dp)
                                             )
                                             ColorWheel(
                                                 title = "Highlight",
@@ -590,7 +591,7 @@ fun StudioDockContainer(
                                                         it.copy(logWheels = it.logWheels.copy(highlight = newHi))
                                                     }
                                                 },
-                                                modifier = Modifier.width(155.dp)
+                                                modifier = Modifier.width(172.dp)
                                             )
                                             ColorWheel(
                                                 title = "Log Offset",
@@ -601,23 +602,23 @@ fun StudioDockContainer(
                                                         it.copy(logWheels = it.logWheels.copy(offset = newOff))
                                                     }
                                                 },
-                                                modifier = Modifier.width(155.dp)
+                                                modifier = Modifier.width(172.dp)
                                             )
                                         }
                                     }
 
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(6.dp))
 
                                     // Log Zone Crossover Range Controls (Low Range & High Range)
                                     Surface(
                                         color = Color(0xFF10141E),
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         border = CardDefaults.outlinedCardBorder().copy(
                                             brush = androidx.compose.ui.graphics.SolidColor(StudioCardBorder)
                                         ),
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                                     ) {
-                                        Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                                        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -626,7 +627,7 @@ fun StudioDockContainer(
                                                 Text(
                                                     text = "LOG TONAL RANGE CROSSOVERS",
                                                     color = ResolveCyan,
-                                                    fontSize = 8.5.sp,
+                                                    fontSize = 11.5.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = FontFamily.Monospace
                                                 )
@@ -637,21 +638,35 @@ fun StudioDockContainer(
                                                         }
                                                     },
                                                     color = Color(0xFF1A2232),
-                                                    shape = RoundedCornerShape(4.dp),
+                                                    shape = RoundedCornerShape(6.dp),
                                                     modifier = Modifier.testTag("reset_log_wheels_btn")
                                                 ) {
                                                     Text(
                                                         text = "Reset Log",
                                                         color = TextSecondary,
-                                                        fontSize = 8.sp,
+                                                        fontSize = 11.sp,
                                                         fontWeight = FontWeight.SemiBold,
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                                     )
                                                 }
                                             }
 
-                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                                Text("Low Range", color = TextSecondary, fontSize = 9.sp, modifier = Modifier.width(62.dp))
+                                            Spacer(modifier = Modifier.height(6.dp))
+
+                                            Column(modifier = Modifier.fillMaxWidth()) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text("Low Range (Shadow Crossover)", color = TextPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                                                    Text(
+                                                        text = "${(log.lowRange * 100).toInt()}% IRE",
+                                                        color = Color(0xFF38BDF8),
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontFamily = FontFamily.Monospace
+                                                    )
+                                                }
                                                 Slider(
                                                     value = log.lowRange,
                                                     onValueChange = { v ->
@@ -661,19 +676,24 @@ fun StudioDockContainer(
                                                     },
                                                     valueRange = 0.10f..0.55f,
                                                     colors = SliderDefaults.colors(thumbColor = Color(0xFF38BDF8), activeTrackColor = Color(0xFF38BDF8)),
-                                                    modifier = Modifier.weight(1f).height(24.dp).testTag("log_low_range_slider")
-                                                )
-                                                Text(
-                                                    text = "${(log.lowRange * 100).toInt()}% IRE",
-                                                    color = Color(0xFF38BDF8),
-                                                    fontSize = 8.5.sp,
-                                                    fontFamily = FontFamily.Monospace,
-                                                    modifier = Modifier.width(46.dp)
+                                                    modifier = Modifier.fillMaxWidth().height(34.dp).testTag("log_low_range_slider")
                                                 )
                                             }
 
-                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                                Text("High Range", color = TextSecondary, fontSize = 9.sp, modifier = Modifier.width(62.dp))
+                                            Column(modifier = Modifier.fillMaxWidth()) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text("High Range (Highlight Crossover)", color = TextPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                                                    Text(
+                                                        text = "${(log.highRange * 100).toInt()}% IRE",
+                                                        color = Color(0xFFFACC15),
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontFamily = FontFamily.Monospace
+                                                    )
+                                                }
                                                 Slider(
                                                     value = log.highRange,
                                                     onValueChange = { v ->
@@ -683,14 +703,7 @@ fun StudioDockContainer(
                                                     },
                                                     valueRange = 0.45f..0.90f,
                                                     colors = SliderDefaults.colors(thumbColor = Color(0xFFFACC15), activeTrackColor = Color(0xFFFACC15)),
-                                                    modifier = Modifier.weight(1f).height(24.dp).testTag("log_high_range_slider")
-                                                )
-                                                Text(
-                                                    text = "${(log.highRange * 100).toInt()}% IRE",
-                                                    color = Color(0xFFFACC15),
-                                                    fontSize = 8.5.sp,
-                                                    fontFamily = FontFamily.Monospace,
-                                                    modifier = Modifier.width(46.dp)
+                                                    modifier = Modifier.fillMaxWidth().height(34.dp).testTag("log_high_range_slider")
                                                 )
                                             }
                                         }

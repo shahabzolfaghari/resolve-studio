@@ -62,6 +62,7 @@ fun VideoPlayerView(
     onSeek: (Float) -> Unit,
     onStepFrame: (Int) -> Unit,
     onBypassPress: (Boolean) -> Unit,
+    onImportVideoClick: () -> Unit = {},
     showFalseColor: Boolean = false,
     onToggleFalseColor: () -> Unit = {},
     showHistogramOverlay: Boolean = false,
@@ -94,43 +95,43 @@ fun VideoPlayerView(
                     Text(
                         text = formatTimecode(currentTimeMs),
                         color = ResolveAmber,
-                        fontSize = 11.sp,
+                        fontSize = 12.5.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     // Aspect Ratio Framing Guide Selector Pill (16:9 -> 9:16 Reels -> 1:1 -> 2.39:1)
                     Surface(
                         color = if (cropGuide != ViewportCropGuide.NONE) ResolveCyan.copy(alpha = 0.2f) else Color(0xFF1A202C),
-                        shape = RoundedCornerShape(5.dp),
+                        shape = RoundedCornerShape(6.dp),
                         border = CardDefaults.outlinedCardBorder().copy(
                             brush = androidx.compose.ui.graphics.SolidColor(
                                 if (cropGuide != ViewportCropGuide.NONE) ResolveCyan else Color(0xFF2D3748)
                             )
                         ),
                         modifier = Modifier
-                            .height(22.dp)
-                            .clip(RoundedCornerShape(5.dp))
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
                             .clickable { cropGuide = cropGuide.next() }
                             .testTag("aspect_guide_toggle")
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 6.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CropFree,
                                 contentDescription = "Aspect Ratio Framing Guide",
                                 tint = if (cropGuide != ViewportCropGuide.NONE) ResolveCyan else TextMuted,
-                                modifier = Modifier.size(11.dp)
+                                modifier = Modifier.size(13.dp)
                             )
-                            Spacer(modifier = Modifier.width(3.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = cropGuide.label,
                                 color = if (cropGuide != ViewportCropGuide.NONE) ResolveCyan else TextSecondary,
-                                fontSize = 8.5.sp,
+                                fontSize = 10.5.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold
                             )
@@ -143,13 +144,13 @@ fun VideoPlayerView(
                     if (mask.type != MaskType.NONE) {
                         IconButton(
                             onClick = { pinMaskWireframe = !pinMaskWireframe },
-                            modifier = Modifier.size(28.dp).testTag("mask_wireframe_toggle")
+                            modifier = Modifier.size(34.dp).testTag("mask_wireframe_toggle")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Layers,
                                 contentDescription = "Toggle Power Window Wireframe",
                                 tint = if (isMaskWireframeVisible) ResolveAmber else TextMuted,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(2.dp))
@@ -158,13 +159,13 @@ fun VideoPlayerView(
                     // False Color Exposure Toggle
                     IconButton(
                         onClick = onToggleFalseColor,
-                        modifier = Modifier.size(28.dp).testTag("false_color_toggle")
+                        modifier = Modifier.size(34.dp).testTag("false_color_toggle")
                     ) {
                         Icon(
                             imageVector = Icons.Default.FilterVintage,
                             contentDescription = "False Color Exposure Meter",
                             tint = if (showFalseColor) ResolveGreen else TextMuted,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
@@ -173,13 +174,13 @@ fun VideoPlayerView(
                     // Real-time Histogram & Vectorscope Overlay Toggle
                     IconButton(
                         onClick = onToggleHistogramOverlay,
-                        modifier = Modifier.size(28.dp).testTag("histogram_overlay_toggle")
+                        modifier = Modifier.size(34.dp).testTag("histogram_overlay_toggle")
                     ) {
                         Icon(
                             imageVector = Icons.Default.Equalizer,
                             contentDescription = "Real-time Scope Overlay",
                             tint = if (showHistogramOverlay) ResolveCyan else TextMuted,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
@@ -190,13 +191,13 @@ fun VideoPlayerView(
                         onClick = {
                             splitPosition = if (splitPosition == null) 0.5f else null
                         },
-                        modifier = Modifier.size(28.dp).testTag("split_wipe_toggle")
+                        modifier = Modifier.size(34.dp).testTag("split_wipe_toggle")
                     ) {
                         Icon(
                             imageVector = Icons.Default.Compare,
                             contentDescription = "Split Screen Wipe",
                             tint = if (splitPosition != null) ResolveAmber else TextMuted,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
@@ -205,7 +206,7 @@ fun VideoPlayerView(
                     // Hold to Bypass Grade button
                     Surface(
                         modifier = Modifier
-                            .height(24.dp)
+                            .height(28.dp)
                             .clip(RoundedCornerShape(6.dp))
                             .pointerInput(Unit) {
                                 detectTapGestures(
@@ -221,11 +222,11 @@ fun VideoPlayerView(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 7.dp)
+                            modifier = Modifier.padding(horizontal = 9.dp)
                         ) {
-                            Icon(Icons.Default.VisibilityOff, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(11.dp))
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text("BYPASS", color = TextSecondary, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.VisibilityOff, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("BYPASS", color = TextSecondary, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -257,14 +258,66 @@ fun VideoPlayerView(
                 } else {
                     Pair(boxWidth, boxHeight)
                 }
-                // 1. Render graded frame (full frame base)
-                gradedBitmap?.let { bmp ->
+                // 1. Render graded frame (full frame base) or clean "Import Video" empty state (NO placeholder images)
+                val displayBitmap = gradedBitmap ?: rawBitmap
+                if (displayBitmap != null) {
                     Image(
-                        bitmap = bmp.asImageBitmap(),
+                        bitmap = displayBitmap.asImageBitmap(),
                         contentDescription = "Graded Video Viewport",
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { onImportVideoClick() }
+                            .padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VideoLibrary,
+                            contentDescription = "Import Video",
+                            tint = ResolveAmber,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "No Video Clip Loaded",
+                            color = TextPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Import a video from your phone to start grading",
+                            color = TextSecondary,
+                            fontSize = 12.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onImportVideoClick,
+                            colors = ButtonDefaults.buttonColors(containerColor = ResolveAmber),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
+                            modifier = Modifier.height(38.dp).testTag("empty_viewport_import_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.UploadFile,
+                                contentDescription = null,
+                                tint = Color(0xFF1E1400),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "IMPORT VIDEO CLIP",
+                                color = Color(0xFF1E1400),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                    }
                 }
 
                 // 2. If Split wipe is active, render raw Log frame clipped to the left side of splitPosition
@@ -462,33 +515,33 @@ fun VideoPlayerView(
                 // Step back 1 frame
                 IconButton(
                     onClick = { onStepFrame(-1) },
-                    modifier = Modifier.size(28.dp).testTag("step_back_button")
+                    modifier = Modifier.size(36.dp).testTag("step_back_button")
                 ) {
-                    Icon(Icons.Default.SkipPrevious, contentDescription = "Step Back", tint = TextSecondary, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.SkipPrevious, contentDescription = "Step Back", tint = TextSecondary, modifier = Modifier.size(20.dp))
                 }
 
                 // Play / Pause
                 IconButton(
                     onClick = onPlayPauseToggle,
-                    modifier = Modifier.size(32.dp).testTag("play_pause_button")
+                    modifier = Modifier.size(40.dp).testTag("play_pause_button")
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (isPlaying) "Pause" else "Play",
                         tint = ResolveAmber,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
 
                 // Step forward 1 frame
                 IconButton(
                     onClick = { onStepFrame(1) },
-                    modifier = Modifier.size(28.dp).testTag("step_forward_button")
+                    modifier = Modifier.size(36.dp).testTag("step_forward_button")
                 ) {
-                    Icon(Icons.Default.SkipNext, contentDescription = "Step Forward", tint = TextSecondary, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.SkipNext, contentDescription = "Step Forward", tint = TextSecondary, modifier = Modifier.size(20.dp))
                 }
 
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 // Timeline Scrubber Slider
                 val progress = if (totalDurationMs > 0) (currentTimeMs.toFloat() / totalDurationMs).coerceIn(0f, 1f) else 0f
@@ -500,17 +553,18 @@ fun VideoPlayerView(
                         activeTrackColor = ResolveAmber,
                         inactiveTrackColor = Color(0xFF283142)
                     ),
-                    modifier = Modifier.weight(1f).height(24.dp).testTag("timeline_scrubber")
+                    modifier = Modifier.weight(1f).height(34.dp).testTag("timeline_scrubber")
                 )
 
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 // Duration
                 Text(
                     text = formatTimecode(totalDurationMs),
-                    color = TextMuted,
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace
+                    color = TextSecondary,
+                    fontSize = 11.5.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }

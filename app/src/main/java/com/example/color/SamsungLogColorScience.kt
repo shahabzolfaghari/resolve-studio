@@ -15,6 +15,26 @@ object SamsungLogColorScience {
     private const val LG = 0.7152f
     private const val LB = 0.0722f
 
+    // Reusable thread-safe pixel buffer to prevent GC thrashing and OOM during 30 FPS playback
+    private val pixelBufferLock = Any()
+    private var reusablePixels = IntArray(0)
+
+    /**
+     * Ensures a Bitmap is backed by accessible CPU memory (ARGB_8888) rather than Config.HARDWARE.
+     * Prevents IllegalStateException crashes on 10-bit HEVC / HDR hardware-decoded frames.
+     */
+    fun ensureSoftwareBitmap(bitmap: Bitmap): Bitmap {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
+            bitmap.config == Bitmap.Config.HARDWARE
+        ) {
+            bitmap.copy(Bitmap.Config.ARGB_8888, false) ?: bitmap
+        } else if (bitmap.config != Bitmap.Config.ARGB_8888) {
+            bitmap.copy(Bitmap.Config.ARGB_8888, false) ?: bitmap
+        } else {
+            bitmap
+        }
+    }
+
     /**
      * Decode Samsung Log gamma curve into linear HDR light values.
      * Samsung Log uses a piecewise logarithmic formulation:
@@ -400,19 +420,35 @@ object SamsungLogColorScience {
         destination: Bitmap? = null,
         isCancelled: () -> Boolean = { false }
     ): Bitmap {
-        val width = source.width
-        val height = source.height
-        val output = destination ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val safeSource = ensureSoftwareBitmap(source)
+        val width = safeSource.width
+        val height = safeSource.height
+        val totalPixels = width * height
+        val output = if (destination != null &&
+            !destination.isRecycled &&
+            destination.isMutable &&
+            destination.width == width &&
+            destination.height == height
+        ) {
+            destination
+        } else {
+            Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        }
 
-        if (settings.bypass) {
-            val pixels = IntArray(width * height)
-            source.getPixels(pixels, 0, width, 0, 0, width, height)
-            output.setPixels(pixels, 0, width, 0, 0, width, height)
+        // Fast-path: When grade is bypassed or completely untouched (identity), copy pixels directly in <0.5ms
+        if (settings.bypass || (settings.isIdentity && !settings.showFalseColor && settings.splitScreenWipe >= 1.0f)) {
+            synchronized(pixelBufferLock) {
+                if (reusablePixels.size < totalPixels) {
+                    reusablePixels = IntArray(totalPixels)
+                }
+                safeSource.getPixels(reusablePixels, 0, width, 0, 0, width, height)
+                output.setPixels(reusablePixels, 0, width, 0, 0, width, height)
+            }
             return output
         }
 
-        val pixels = IntArray(width * height)
-        source.getPixels(pixels, 0, width, 0, 0, width, height)
+        val pixels = IntArray(totalPixels)
+        safeSource.getPixels(pixels, 0, width, 0, 0, width, height)
 
         // 1. Precompute 256-element Log-to-Linear & Knee Curve LUT (eliminates exp() calls in pixel loops)
         val logToLinearLut = FloatArray(256) { i ->
@@ -732,7 +768,7 @@ object SamsungLogColorScience {
                             }
 
                             // 7. Look / LUT Preset Emulation (Zero allocation)
-                            if (!settings.lutBypass && lutIntensity > 0f) {
+                            if (!settings.lutBypass && lutPreset != LutPreset.NONE && lutIntensity > 0f) {
                                 applyLutPresetFast(r, g, b, lutPreset, settings, scratchLut)
                                 r = r * (1f - lutIntensity) + scratchLut[0] * lutIntensity
                                 g = g * (1f - lutIntensity) + scratchLut[1] * lutIntensity
@@ -879,6 +915,11 @@ object SamsungLogColorScience {
         out: FloatArray
     ) {
         when (preset) {
+            LutPreset.NONE -> {
+                out[0] = r
+                out[1] = g
+                out[2] = b
+            }
             LutPreset.SAMSUNG_LOG_TO_REC709 -> {
                 // High fidelity standard Rec.709 color conversion for Samsung S24 Log
                 val cr = (r - 0.5f) * 1.12f + 0.5f
@@ -1167,19 +1208,20 @@ object SamsungLogColorScience {
      * Calculate 256-bin RGB and Luminance Histogram data with real-time clipping detection.
      */
     fun calculateHistogram(bitmap: Bitmap): HistogramData {
+        val safeBitmap = ensureSoftwareBitmap(bitmap)
         val rBins = IntArray(256)
         val gBins = IntArray(256)
         val bBins = IntArray(256)
         val lumBins = IntArray(256)
 
-        val w = bitmap.width
-        val h = bitmap.height
+        val w = safeBitmap.width
+        val h = safeBitmap.height
         // Downsample for instant computation
         val stepX = (w / 120).coerceAtLeast(1)
         val stepY = (h / 80).coerceAtLeast(1)
 
         val pixels = IntArray(w * h)
-        bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+        safeBitmap.getPixels(pixels, 0, w, 0, 0, w, h)
 
         var totalSamples = 0
         var shadowClipCount = 0
@@ -1235,16 +1277,17 @@ object SamsungLogColorScience {
      * Calculate Waveform RGB Parade columns (100 bins vertical, column sample horizontal).
      */
     fun calculateWaveform(bitmap: Bitmap): WaveformData {
+        val safeBitmap = ensureSoftwareBitmap(bitmap)
         val columns = 90
         val rows = 80
         val rGrid = Array(columns) { FloatArray(rows) }
         val gGrid = Array(columns) { FloatArray(rows) }
         val bGrid = Array(columns) { FloatArray(rows) }
 
-        val w = bitmap.width
-        val h = bitmap.height
+        val w = safeBitmap.width
+        val h = safeBitmap.height
         val pixels = IntArray(w * h)
-        bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+        safeBitmap.getPixels(pixels, 0, w, 0, 0, w, h)
 
         val colStep = w / columns
         val rowStep = h / 60
@@ -1551,8 +1594,10 @@ object SamsungLogColorScience {
         radiusX: Float,
         radiusY: Float
     ): TrackerResult {
-        val w = currentBitmap.width.coerceAtLeast(1)
-        val h = currentBitmap.height.coerceAtLeast(1)
+        val safeCurrent = ensureSoftwareBitmap(currentBitmap)
+        val safePrevious = previousBitmap?.let { ensureSoftwareBitmap(it) }
+        val w = safeCurrent.width.coerceAtLeast(1)
+        val h = safeCurrent.height.coerceAtLeast(1)
 
         val centerPxX = (centerX * w).toInt().coerceIn(0, w - 1)
         val centerPxY = (centerY * h).toInt().coerceIn(0, h - 1)
@@ -1562,7 +1607,7 @@ object SamsungLogColorScience {
         val halfTh = ((radiusY * h * 0.5f).toInt()).coerceIn(12, 36)
 
         // If no previous frame to correlate against, calibrate on current frame
-        val refBitmap = previousBitmap ?: currentBitmap
+        val refBitmap = safePrevious ?: safeCurrent
 
         // Extract template patch from reference frame
         val tX0 = (centerPxX - halfTw).coerceIn(0, w - 1)
@@ -1631,7 +1676,7 @@ object SamsungLogColorScience {
                 for (cy in curY0..curY1 step tStep) {
                     for (cx in curX0..curX1 step tStep) {
                         if (sampleIdx >= tCount) break
-                        val p = currentBitmap.getPixel(cx, cy)
+                        val p = safeCurrent.getPixel(cx, cy)
                         val lum = (0.2126 * ((p shr 16) and 0xFF) + 0.7152 * ((p shr 8) and 0xFF) + 0.0722 * (p and 0xFF)) / 255.0
                         cSum += lum
                         sampleIdx++
@@ -1645,7 +1690,7 @@ object SamsungLogColorScience {
                 for (cy in curY0..curY1 step tStep) {
                     for (cx in curX0..curX1 step tStep) {
                         if (sampleIdx >= tCount) break
-                        val p = currentBitmap.getPixel(cx, cy)
+                        val p = safeCurrent.getPixel(cx, cy)
                         val lum = (0.2126 * ((p shr 16) and 0xFF) + 0.7152 * ((p shr 8) and 0xFF) + 0.0722 * (p and 0xFF)) / 255.0
                         val cDiff = lum - cMean
                         val tDiff = tSamples[sampleIdx] - tMean

@@ -117,35 +117,27 @@ fun ColorWheel(
             modifier = Modifier.padding(8.dp)
         ) {
             // ==========================================
-            // 1. HEADER: Title, Tonal Range, Reset, Precision Toggle
+            // 1. HEADER: Title, Reset, Precision Toggle
             // ==========================================
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(accentColor)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = title.uppercase(),
-                            color = TextPrimary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 1.sp
-                        )
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(9.dp)
+                            .clip(CircleShape)
+                            .background(accentColor)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = role.tonalRange,
-                        color = TextMuted,
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace
+                        text = title.uppercase(),
+                        color = TextPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.8.sp
                     )
                 }
 
@@ -154,13 +146,13 @@ fun ColorWheel(
                     if (allowPrecisionMode) {
                         IconButton(
                             onClick = { isPrecisionFineTune = !isPrecisionFineTune },
-                            modifier = Modifier.size(22.dp).testTag("precision_mode_${title.lowercase()}")
+                            modifier = Modifier.size(28.dp).testTag("precision_mode_${title.lowercase()}")
                         ) {
                             Icon(
                                 imageVector = if (isPrecisionFineTune) Icons.Default.CenterFocusStrong else Icons.Default.Tune,
                                 contentDescription = "Precision Mode",
                                 tint = if (isPrecisionFineTune) ResolveAmber else TextMuted,
-                                modifier = Modifier.size(13.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(2.dp))
@@ -169,13 +161,13 @@ fun ColorWheel(
                     // Reset button
                     IconButton(
                         onClick = { onValueChange(WheelValue(0f, 0f, 0f)) },
-                        modifier = Modifier.size(24.dp).testTag("reset_wheel_${title.lowercase()}")
+                        modifier = Modifier.size(28.dp).testTag("reset_wheel_${title.lowercase()}")
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Reset $title",
                             tint = TextMuted,
-                            modifier = Modifier.size(13.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
@@ -325,7 +317,7 @@ fun ColorWheel(
             Spacer(modifier = Modifier.height(4.dp))
 
             // ==========================================
-            // 3. REAL-TIME HUE & SATURATION FEEDBACK BADGE
+            // 3. REAL-TIME HUE, SATURATION & LUMINANCE TELEMETRY
             // ==========================================
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -334,9 +326,8 @@ fun ColorWheel(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(6.dp))
                     .background(Color(0xFF0F1218))
-                    .padding(horizontal = 6.dp, vertical = 3.dp)
+                    .padding(horizontal = 8.dp, vertical = 5.dp)
             ) {
-                // Color Swatch Pill
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -347,88 +338,33 @@ fun ColorWheel(
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = "H: ${hueDegrees.toInt()}°",
-                        color = TextPrimary,
-                        fontSize = 8.5.sp,
+                        text = "${hueDegrees.toInt()}° • ${(satMagnitude * 100).toInt()}%",
+                        color = if (satMagnitude > 0.03f) ResolveCyan else TextSecondary,
+                        fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
-                // Saturation Percentage
                 Text(
-                    text = "S: ${(satMagnitude * 100).toInt()}%",
-                    color = if (satMagnitude > 0.05f) ResolveCyan else TextMuted,
-                    fontSize = 8.5.sp,
+                    text = String.format("Y %+.2f", value.lum),
+                    color = if (value.lum != 0f) ResolveAmber else TextSecondary,
+                    fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold
                 )
-
-                // Precision indicator badge
-                if (isPrecisionFineTune) {
-                    Text(
-                        text = "FINE",
-                        color = ResolveAmber,
-                        fontSize = 7.5.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                }
             }
 
-            Spacer(modifier = Modifier.height(3.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // ==========================================
-            // 4. PRIMARY RGB BALANCES (DAVINCI STUDIO TELEMETRY)
-            // ==========================================
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 2.dp)
-            ) {
-                RgbOffsetBadge(label = "R", offset = rShift, color = Color(0xFFEF4444))
-                RgbOffsetBadge(label = "G", offset = gShift, color = Color(0xFF10B981))
-                RgbOffsetBadge(label = "B", offset = bShift, color = Color(0xFF38BDF8))
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // ==========================================
-            // 5. MASTER LUMINANCE JOG WHEEL SLIDER
+            // 4. MASTER LUMINANCE JOG WHEEL SLIDER
             // ==========================================
             LuminanceWheelSlider(
                 lumValue = value.lum,
                 onLumChange = { newLum -> onValueChange(value.copy(lum = newLum)) }
             )
         }
-    }
-}
-
-@Composable
-private fun RgbOffsetBadge(label: String, offset: Float, color: Color) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(Color(0xFF0B0E14))
-            .padding(horizontal = 4.dp, vertical = 1.5.dp)
-    ) {
-        Text(
-            text = label,
-            color = color,
-            fontSize = 7.5.sp,
-            fontWeight = FontWeight.Black,
-            fontFamily = FontFamily.Monospace
-        )
-        Spacer(modifier = Modifier.width(3.dp))
-        Text(
-            text = String.format("%+.2f", offset),
-            color = if (abs(offset) > 0.01f) TextPrimary else TextMuted,
-            fontSize = 7.5.sp,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold
-        )
     }
 }
 
@@ -449,10 +385,10 @@ fun LuminanceWheelSlider(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(26.dp)
-                .clip(RoundedCornerShape(6.dp))
+                .height(34.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFF0F1218))
-                .border(0.8.dp, Color(0xFF1E2636), RoundedCornerShape(6.dp))
+                .border(1.dp, Color(0xFF1E2636), RoundedCornerShape(8.dp))
                 .pointerInput(Unit) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
@@ -474,48 +410,29 @@ fun LuminanceWheelSlider(
                 val midX = w / 2f
 
                 // Precision tick marks
-                val numTicks = 21
+                val numTicks = 17
                 val spacing = w / (numTicks + 1)
                 for (i in 1..numTicks) {
                     val tx = i * spacing
                     val isCenter = i == (numTicks + 1) / 2
-                    val tickHeight = if (isCenter) h * 0.7f else h * 0.35f
+                    val tickHeight = if (isCenter) h * 0.72f else h * 0.38f
                     val color = if (isCenter) ResolveAmber else Color(0xFF283142)
                     drawLine(
                         color = color,
                         start = Offset(tx, (h - tickHeight) / 2f),
                         end = Offset(tx, (h + tickHeight) / 2f),
-                        strokeWidth = if (isCenter) 2.dp.toPx() else 1.dp.toPx()
+                        strokeWidth = if (isCenter) 2.dp.toPx() else 1.2.dp.toPx()
                     )
                 }
 
                 // Active luminance needle
-                val indicatorX = (midX + lumValue * (w * 0.42f)).coerceIn(4.dp.toPx(), w - 4.dp.toPx())
-                drawLine(
+                val indicatorX = (midX + lumValue * (w * 0.44f)).coerceIn(6.dp.toPx(), w - 6.dp.toPx())
+                drawCircle(
                     color = ResolveAmber,
-                    start = Offset(indicatorX, 0f),
-                    end = Offset(indicatorX, h),
-                    strokeWidth = 2.5.dp.toPx()
+                    radius = 5.dp.toPx(),
+                    center = Offset(indicatorX, h / 2f)
                 )
             }
-        }
-
-        Spacer(modifier = Modifier.height(2.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-        ) {
-            Text("LUM MASTER", color = TextMuted, fontSize = 7.5.sp, fontWeight = FontWeight.Bold)
-            Text(
-                text = String.format("%+.2f", lumValue),
-                color = if (lumValue == 0f) TextSecondary else ResolveAmber,
-                fontSize = 8.5.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold
-            )
         }
     }
 }

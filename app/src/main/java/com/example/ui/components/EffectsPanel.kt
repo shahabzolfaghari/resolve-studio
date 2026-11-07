@@ -178,19 +178,47 @@ fun GradeSliderRow(
     formatString: String = "%.2f",
     testTag: String = ""
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(28.dp)
-            .padding(vertical = 2.dp)
+            .padding(vertical = 5.dp)
     ) {
-        Text(
-            text = label,
-            color = TextSecondary,
-            fontSize = 9.5.sp,
-            modifier = Modifier.width(100.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = label,
+                color = TextPrimary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = String.format(formatString, value),
+                    color = if (value != defaultValue) activeColor else TextSecondary,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                IconButton(
+                    onClick = { onValueChange(defaultValue) },
+                    enabled = value != defaultValue,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.RestartAlt,
+                        contentDescription = "Reset $label",
+                        tint = if (value != defaultValue) activeColor else Color(0xFF334155),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+
         Slider(
             value = value,
             onValueChange = onValueChange,
@@ -201,30 +229,9 @@ fun GradeSliderRow(
                 inactiveTrackColor = Color(0xFF1E2638)
             ),
             modifier = Modifier
-                .weight(1f)
-                .height(24.dp)
+                .fillMaxWidth()
+                .height(34.dp)
                 .testTag(testTag)
         )
-        Text(
-            text = String.format(formatString, value),
-            color = if (value != defaultValue) activeColor else TextMuted,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            modifier = Modifier.width(48.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.End
-        )
-        IconButton(
-            onClick = { onValueChange(defaultValue) },
-            enabled = value != defaultValue,
-            modifier = Modifier.size(20.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.RestartAlt,
-                contentDescription = "Reset $label",
-                tint = if (value != defaultValue) activeColor.copy(alpha = 0.7f) else Color(0xFF283244),
-                modifier = Modifier.size(12.dp)
-            )
-        }
     }
 }

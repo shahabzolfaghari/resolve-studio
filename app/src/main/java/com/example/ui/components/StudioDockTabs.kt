@@ -54,16 +54,16 @@ fun StudioDockTabs(
             modifier = Modifier
                 .weight(1f)
                 .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             StudioToolTab.values().forEach { tab ->
                 val isSelected = activeTab == tab
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (isSelected) ResolveAmber.copy(alpha = 0.18f) else Color.Transparent)
+                        .background(if (isSelected) ResolveAmber.copy(alpha = 0.22f) else Color.Transparent)
                         .clickable { onTabSelected(tab) }
-                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                        .padding(horizontal = 12.dp, vertical = 7.dp)
                         .testTag("dock_tab_${tab.name.lowercase()}"),
                     contentAlignment = Alignment.Center
                 ) {
@@ -72,14 +72,14 @@ fun StudioDockTabs(
                             imageVector = tab.icon,
                             contentDescription = tab.title,
                             tint = if (isSelected) ResolveAmber else TextMuted,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = tab.title,
                             color = if (isSelected) ResolveAmber else TextSecondary,
-                            fontSize = 9.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            fontSize = 11.5.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                         )
                     }
                 }
@@ -90,9 +90,9 @@ fun StudioDockTabs(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
-                .background(if (showScopes) ResolveCyan.copy(alpha = 0.2f) else Color(0xFF1B222F))
+                .background(if (showScopes) ResolveCyan.copy(alpha = 0.22f) else Color(0xFF1B222F))
                 .clickable { onToggleScopes() }
-                .padding(horizontal = 10.dp, vertical = 6.dp)
+                .padding(horizontal = 12.dp, vertical = 7.dp)
                 .testTag("toggle_scopes_dock_button"),
             contentAlignment = Alignment.Center
         ) {
@@ -101,14 +101,14 @@ fun StudioDockTabs(
                     imageVector = Icons.Default.Equalizer,
                     contentDescription = "Scopes",
                     tint = if (showScopes) ResolveCyan else TextMuted,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(3.dp))
                 Text(
                     text = "Scopes",
                     color = if (showScopes) ResolveCyan else TextSecondary,
-                    fontSize = 9.sp,
-                    fontWeight = if (showScopes) FontWeight.Bold else FontWeight.Normal
+                    fontSize = 11.5.sp,
+                    fontWeight = if (showScopes) FontWeight.Bold else FontWeight.Medium
                 )
             }
         }

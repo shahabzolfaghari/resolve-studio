@@ -996,19 +996,20 @@
               <div class="flex items-baseline gap-3 sm:gap-4">
                 <span class="font-mono text-xs text-white/50">01</span>
                 <h3 class="chapter-title text-lg sm:text-2xl font-normal tracking-[-0.025em]">
-                  Primary 3-Way Wheels
+                  Primary & Log Zone Wheels
                 </h3>
               </div>
               <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 shrink-0">
-                LIFT · GAMMA · GAIN
+                PRIMARIES · LOG ZONES
               </span>
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
               <p class="text-sm text-white/70 leading-relaxed">
-                2D vector pucks with precision master luma rings and double-tap neutral reset. Operates directly on linearised scene values.
+                2D vector pucks with precision master luma rings plus dedicated Log Zone Wheels (Shadow, Midtone, Highlight) with Low/High Range % IRE crossover pivots.
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">CDL Parameters</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Lift / Gamma / Gain</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Log Zone Pivots</span>
                 <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">256-Bin Histogram</span>
               </div>
             </div>
@@ -1030,19 +1031,20 @@
               <div class="flex items-baseline gap-3 sm:gap-4">
                 <span class="font-mono text-xs text-white/50">02</span>
                 <h3 class="chapter-title text-lg sm:text-2xl font-normal tracking-[-0.025em]">
-                  Monotonic Cubic Curves
+                  Monotonic & Color Curves
                 </h3>
               </div>
               <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 shrink-0">
-                Y · R · G · B SPLINES
+                YRGB · HUE & LUM SPLINES
               </span>
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
               <p class="text-sm text-white/70 leading-relaxed">
-                Fritsch-Carlson monotonic cubic Hermite interpolation guarantees smooth tonal roll-off without overshoot artifacts.
+                Fritsch-Carlson monotonic cubic Hermite interpolation guarantees overshoot-free roll-off, paired with periodic Hue vs Hue, Hue vs Sat, and Color vs Color splines.
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
                 <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Hermite Splines</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Periodic Hue Seams</span>
                 <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Waveform Parade</span>
               </div>
             </div>
@@ -1064,20 +1066,21 @@
               <div class="flex items-baseline gap-3 sm:gap-4">
                 <span class="font-mono text-xs text-white/50">03</span>
                 <h3 class="chapter-title text-lg sm:text-2xl font-normal tracking-[-0.025em]">
-                  3D LUT Manager
+                  3D LUT Matrix & CST Node
                 </h3>
               </div>
               <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 shrink-0">
-                FILM RECIPES + .CUBE
+                FILM RECIPES · CST · 33³ .CUBE
               </span>
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
               <p class="text-sm text-white/70 leading-relaxed">
-                Ships with procedural film recipes including Classic Neg, Kodak 2383, and ACROS, plus .cube import and mix intensity blending.
+                Instant film emulation (Kodak 2383, Fuji Classic Neg, Panatomic-X), DaVinci Color Space Transform (CST) nodes, and organic film grain synthesis (35mm/16mm/8mm).
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
                 <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">33³ .cube Export</span>
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Intensity Blend</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">CST Output Node</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Organic Film Grain</span>
               </div>
             </div>
             <div class="chapter-progress" data-room-progress="2" aria-hidden="true"></div>
@@ -1098,20 +1101,21 @@
               <div class="flex items-baseline gap-3 sm:gap-4">
                 <span class="font-mono text-xs text-white/50">04</span>
                 <h3 class="chapter-title text-lg sm:text-2xl font-normal tracking-[-0.025em]">
-                  Elliptical Power Windows
+                  Power Window & Motion Tracker
                 </h3>
               </div>
               <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 shrink-0">
-                SPATIAL QUALIFIER
+                TRIANGLE · BEZIER · NCC TRACKER
               </span>
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
               <p class="text-sm text-white/70 leading-relaxed">
-                On-monitor geometry qualifier with independent X/Y radii, feather ring, and inside/outside mask inversion.
+                Geometric masks (Triangle, Oval, Rect, Linear, Cubic Bezier) combined with normalized cross-correlation (NCC) motion tracking and 3D HSL secondary qualifiers.
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Feather Falloff</span>
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Mask Invert</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Triangle Mask</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Cloud Motion Tracker</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">3D HSL Keyer</span>
               </div>
             </div>
             <div class="chapter-progress" data-room-progress="3" aria-hidden="true"></div>
@@ -1141,10 +1145,11 @@
             </div>
             <div class="chapter-desc pl-7 sm:pl-8">
               <p class="text-sm text-white/70 leading-relaxed">
-                Rotate or connect to Samsung DeX to unlock dual-column posture: 16:9 grading view on the left, full scope deck on the right.
+                Adaptive dual-column posture: 16:9 grading view on the left with live split wipe, full scope dock on the right, and multi-clip timeline strip at the base.
               </p>
               <div class="mt-3.5 flex flex-wrap gap-2">
-                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Adaptive Posture</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Multi-Clip Timeline</span>
+                <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Split-Screen Wipe</span>
                 <span class="liquid-glass rounded-full px-3 py-1 font-mono text-[10px] text-white/80">Samsung DeX</span>
               </div>
             </div>
@@ -1464,8 +1469,8 @@
           </div>
           <div class="mt-5 flex items-center justify-between pt-4 hairline-t w-full">
             <div>
-              <h3 class="text-base font-medium text-white">Lift / Gamma / Gain / Offset</h3>
-              <p class="text-xs text-white/70 mt-0.5">S24 Sunset Portrait with floating RGB Histogram.</p>
+              <h3 class="text-base font-medium text-white">Primary & Log Zone Wheels</h3>
+              <p class="text-xs text-white/70 mt-0.5">S24 Sunset Portrait with Log Zone IRE pivots and live Histogram HUD.</p>
             </div>
             <span class="font-mono text-xs text-white/60 group-hover:text-white" aria-hidden="true">↗</span>
           </div>
@@ -1501,7 +1506,7 @@
           <div class="mt-5 flex items-center justify-between pt-4 hairline-t w-full">
             <div>
               <h3 class="text-base font-medium text-white">Spline Curves + Parade</h3>
-              <p class="text-xs text-white/70 mt-0.5">S24 Tokyo Cyber Neon in Scope + Tool split view.</p>
+              <p class="text-xs text-white/70 mt-0.5">S24 Tokyo Cyber Neon with periodic hue curves and RGB waveform separation.</p>
             </div>
             <span class="font-mono text-xs text-white/60 group-hover:text-white" aria-hidden="true">↗</span>
           </div>
@@ -1536,8 +1541,8 @@
           </div>
           <div class="mt-5 flex items-center justify-between pt-4 hairline-t w-full">
             <div>
-              <h3 class="text-base font-medium text-white">3D Film Recipe Vault</h3>
-              <p class="text-xs text-white/70 mt-0.5">S24 Alpine Lake with 92% Fujifilm Classic Neg blend.</p>
+              <h3 class="text-base font-medium text-white">3D Film Recipe Vault & CST</h3>
+              <p class="text-xs text-white/70 mt-0.5">S24 Alpine Lake with Fuji Classic Neg blend and DaVinci CST output transform.</p>
             </div>
             <span class="font-mono text-xs text-white/60 group-hover:text-white" aria-hidden="true">↗</span>
           </div>
@@ -1547,12 +1552,12 @@
         <button
           type="button"
           data-cursor="INSPECT"
-          onclick="openLightbox('screenshots/app-power-window.png', 'PLATE 05 · Elliptical Power Window Qualifier (824×1830)')"
-          aria-label="Inspect Plate 05: Elliptical Power Window"
+          onclick="openLightbox('screenshots/app-power-window.png', 'PLATE 05 · Triangle Power Window & Cloud Motion Tracker (824×1830)')"
+          aria-label="Inspect Plate 05: Triangle Power Window & Motion Tracker"
           class="filmstrip-card snap-center liquid-glass shrink-0 w-[78vw] sm:w-[340px] rounded-3xl p-5 sm:p-6 flex flex-col justify-between cursor-pointer group will-change-transform text-left border-0 focus-visible:ring-2 focus-visible:ring-white"
         >
           <div class="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/60 mb-4 w-full">
-            <span>PLATE 05 // POWER WINDOW</span>
+            <span>PLATE 05 // POWER WINDOW & TRACKER</span>
             <span>824 × 1830 PX</span>
           </div>
           <div class="overflow-hidden rounded-2xl bg-black border border-white/[0.08] w-full">
@@ -1561,7 +1566,7 @@
               <source type="image/webp" srcset="screenshots/app-power-window.webp" />
               <img
                 src="screenshots/app-power-window.png"
-                alt="Interactive Elliptical Power Window Qualifier"
+                alt="Interactive Triangle Power Window Qualifier and Motion Tracker"
                 width="824"
                 height="1830"
                 loading="lazy"
@@ -1572,8 +1577,8 @@
           </div>
           <div class="mt-5 flex items-center justify-between pt-4 hairline-t w-full">
             <div>
-              <h3 class="text-base font-medium text-white">Spatial Power Window</h3>
-              <p class="text-xs text-white/70 mt-0.5">S24 Film Noir Studio with elliptical feather ring.</p>
+              <h3 class="text-base font-medium text-white">Triangle Window & Motion Tracker</h3>
+              <p class="text-xs text-white/70 mt-0.5">S24 Film Noir Studio with Triangle mask, Cloud Motion Tracker, and Vectorscope.</p>
             </div>
             <span class="font-mono text-xs text-white/60 group-hover:text-white" aria-hidden="true">↗</span>
           </div>
@@ -2089,27 +2094,27 @@
     const ROOM_METADATA = [
       {
         file: 'ui/components/ColorWheel.kt',
-        caption: 'S24 Sunset Portrait · Lift / Gamma / Gain / Offset + Luma/RGB Histogram',
+        caption: 'S24 Sunset Portrait · 3-Way Primaries & Log Zone Wheels + 256-Bin Histogram HUD',
         src: 'screenshots/app-wheels-scopes.png'
       },
       {
         file: 'ui/components/CurvesEditor.kt',
-        caption: 'S24 Tokyo Cyber Neon · Fritsch-Carlson Monotonic Splines + RGB Waveform Parade',
+        caption: 'S24 Tokyo Cyber Neon · Monotonic Splines & Color Curves + RGB Waveform Parade',
         src: 'screenshots/app-curves-parade.png'
       },
       {
         file: 'ui/components/LutManager.kt',
-        caption: 'S24 Alpine Lake · 3D LUT Vault with 33³ .cube Export (92% Blend)',
+        caption: 'S24 Alpine Lake · 3D LUT Presets & Color Space Transform Node (Fuji Classic Neg)',
         src: 'screenshots/app-luts-browser.png'
       },
       {
         file: 'ui/components/PowerWindowOverlay.kt',
-        caption: 'S24 Film Noir Studio · Interactive Elliptical Power Window Qualifier',
+        caption: 'S24 Film Noir Studio · Triangle Power Window & Cloud Motion Tracker (NCC Keyframes)',
         src: 'screenshots/app-power-window.png'
       },
       {
         file: 'ui/GradingStudioScreen.kt',
-        caption: 'Adaptive w880dp Landscape · Dual-Monitor Grading & Scope Workstation',
+        caption: 'Adaptive w880dp Landscape · Split-Monitor Workstation with Multi-Clip Timeline Strip',
         src: 'screenshots/app-landscape-studio.png'
       }
     ];

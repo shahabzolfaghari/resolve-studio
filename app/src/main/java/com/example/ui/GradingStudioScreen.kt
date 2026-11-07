@@ -46,7 +46,12 @@ import com.example.video.VideoExporter
 @Composable
 fun GradingStudioScreen(
     viewModel: GradingViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    uiStateManager: StudioUiStateManager = rememberStudioUiStateManager(),
+    initialTab: StudioToolTab = StudioToolTab.WHEELS,
+    initialShowScopes: Boolean = false,
+    initialHistogramOverlay: Boolean = false,
+    initialUseLogWheels: Boolean = false
 ) {
     val context = LocalContext.current
     val settings by viewModel.gradeSettings.collectAsStateWithLifecycle()
@@ -72,9 +77,8 @@ fun GradingStudioScreen(
     val exportProgress by viewModel.exportProgress.collectAsStateWithLifecycle()
     val exportStatusMessage by viewModel.exportStatusMessage.collectAsStateWithLifecycle()
 
-    val uiStateManager = rememberStudioUiStateManager()
-    var activeTab by remember { mutableStateOf(StudioToolTab.WHEELS) }
-    var showScopes by remember { mutableStateOf(false) }
+    var activeTab by remember { mutableStateOf(initialTab) }
+    var showScopes by remember { mutableStateOf(initialShowScopes) }
     var showSceneMenu by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
@@ -82,7 +86,7 @@ fun GradingStudioScreen(
     var showSavePresetDialog by remember { mutableStateOf(false) }
     var showPresetManagerDialog by remember { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
-    var showHistogramOverlay by remember { mutableStateOf(false) }
+    var showHistogramOverlay by remember { mutableStateOf(initialHistogramOverlay) }
     val savedPresets by viewModel.savedPresets.collectAsStateWithLifecycle()
 
     // Auto-dismiss history toast after 2 seconds
@@ -184,13 +188,13 @@ fun GradingStudioScreen(
                     IconButton(
                         onClick = { viewModel.undo() },
                         enabled = canUndo,
-                        modifier = Modifier.size(30.dp).testTag("undo_button")
+                        modifier = Modifier.size(34.dp).testTag("undo_button")
                     ) {
                         Icon(
                             imageVector = Icons.Default.Undo,
                             contentDescription = "Undo",
                             tint = if (canUndo) ResolveAmber else TextMuted.copy(alpha = 0.35f),
-                            modifier = Modifier.size(17.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
 
@@ -198,74 +202,44 @@ fun GradingStudioScreen(
                     IconButton(
                         onClick = { viewModel.redo() },
                         enabled = canRedo,
-                        modifier = Modifier.size(30.dp).testTag("redo_button")
+                        modifier = Modifier.size(34.dp).testTag("redo_button")
                     ) {
                         Icon(
                             imageVector = Icons.Default.Redo,
                             contentDescription = "Redo",
                             tint = if (canRedo) ResolveAmber else TextMuted.copy(alpha = 0.35f),
-                            modifier = Modifier.size(17.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
 
-                    // Video Clip & Scene Selector Menu
-                    Box {
-                        IconButton(
-                            onClick = { showSceneMenu = true },
-                            modifier = Modifier.size(30.dp).testTag("scene_selector_button")
-                        ) {
-                            Icon(Icons.Default.VideoLibrary, contentDescription = "Scenes", tint = TextSecondary, modifier = Modifier.size(17.dp))
-                        }
-
-                        DropdownMenu(
-                            expanded = showSceneMenu,
-                            onDismissRequest = { showSceneMenu = false },
-                            modifier = Modifier.background(StudioSurfaceVariant)
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Import Camera Roll Video...", color = ResolveCyan, fontWeight = FontWeight.Bold) },
-                                leadingIcon = { Icon(Icons.Default.UploadFile, contentDescription = null, tint = ResolveCyan) },
-                                onClick = {
-                                    showSceneMenu = false
-                                    videoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
-                                },
-                                modifier = Modifier.testTag("import_video_menu_item")
-                            )
-
-                            HorizontalDivider(color = StudioCardBorder)
-
-                            SampleScene.values().forEach { scene ->
-                                DropdownMenuItem(
-                                    text = { Text(scene.sceneName, color = TextPrimary, fontSize = 12.sp) },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Movie,
-                                            contentDescription = null,
-                                            tint = if (currentScene == scene) ResolveAmber else TextMuted
-                                        )
-                                    },
-                                    onClick = {
-                                        showSceneMenu = false
-                                        viewModel.loadScene(scene)
-                                    }
-                                )
-                            }
-                        }
+                    // Direct 1-Tap Import Video Clip Button (No Synthetic Placeholder Scenes)
+                    IconButton(
+                        onClick = {
+                            videoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                        },
+                        modifier = Modifier.size(36.dp).testTag("scene_selector_button")
+                    ) {
+                        Icon(
+                            Icons.Default.VideoLibrary,
+                            contentDescription = "Import Video Clip",
+                            tint = ResolveCyan,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
 
                     // Export Button CTA
                     Button(
                         onClick = { showExportDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = ResolveAmber),
-                        contentPadding = PaddingValues(horizontal = 7.dp, vertical = 2.dp),
-                        shape = RoundedCornerShape(5.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(6.dp),
                         modifier = Modifier
-                            .height(26.dp)
+                            .height(30.dp)
                             .testTag("open_export_dialog_button")
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = null, tint = Color(0xFF1E1400), modifier = Modifier.size(11.dp))
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text("EXPORT", color = Color(0xFF1E1400), fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+                        Icon(Icons.Default.Share, contentDescription = null, tint = Color(0xFF1E1400), modifier = Modifier.size(13.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("EXPORT", color = Color(0xFF1E1400), fontSize = 11.sp, fontWeight = FontWeight.Black)
                     }
 
                     Spacer(modifier = Modifier.width(2.dp))
@@ -418,6 +392,9 @@ fun GradingStudioScreen(
                                     onSeek = { viewModel.seekTo(it) },
                                     onStepFrame = { viewModel.stepFrame(it) },
                                     onBypassPress = { viewModel.setBypass(it) },
+                                    onImportVideoClick = {
+                                        videoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                                    },
                                     showFalseColor = settings.showFalseColor,
                                     onToggleFalseColor = {
                                         viewModel.updateSettings("Toggle False Color") { it.copy(showFalseColor = !it.showFalseColor) }
@@ -503,6 +480,9 @@ fun GradingStudioScreen(
                                         onSeek = { viewModel.seekTo(it) },
                                         onStepFrame = { viewModel.stepFrame(it) },
                                         onBypassPress = { viewModel.setBypass(it) },
+                                        onImportVideoClick = {
+                                            videoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                                        },
                                         showFalseColor = settings.showFalseColor,
                                         onToggleFalseColor = {
                                             viewModel.updateSettings("Toggle False Color") { it.copy(showFalseColor = !it.showFalseColor) }
@@ -590,6 +570,9 @@ fun GradingStudioScreen(
                                     onSeek = { viewModel.seekTo(it) },
                                     onStepFrame = { viewModel.stepFrame(it) },
                                     onBypassPress = { viewModel.setBypass(it) },
+                                    onImportVideoClick = {
+                                        videoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                                    },
                                     showFalseColor = settings.showFalseColor,
                                     onToggleFalseColor = {
                                         viewModel.updateSettings("Toggle False Color") { it.copy(showFalseColor = !it.showFalseColor) }

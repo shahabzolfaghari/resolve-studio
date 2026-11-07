@@ -50,7 +50,7 @@ enum class GamutMappingMethod(val displayName: String) {
  * wide-gamut log footage into standardized delivery color spaces (Rec.709).
  */
 data class CstNodeSettings(
-    val enabled: Boolean = true,
+    val enabled: Boolean = false,
     val inputColorSpace: InputColorSpace = InputColorSpace.DAVINCI_WIDE_GAMUT,
     val inputGamma: InputGamma = InputGamma.DAVINCI_INTERMEDIATE,
     val outputColorSpace: OutputColorSpace = OutputColorSpace.REC709,

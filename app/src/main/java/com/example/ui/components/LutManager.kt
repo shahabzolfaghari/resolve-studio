@@ -331,8 +331,8 @@ fun LutManager(
 
                     Box(
                         modifier = Modifier
-                            .width(142.dp)
-                            .height(82.dp)
+                            .width(155.dp)
+                            .height(90.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (isSelected) Color(0xFF242C3F) else Color(0xFF121620))
                             .border(
@@ -341,7 +341,7 @@ fun LutManager(
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .clickable { onLutChange(preset) }
-                            .padding(8.dp)
+                            .padding(9.dp)
                             .testTag("lut_item_${preset.name.lowercase()}"),
                         contentAlignment = Alignment.TopStart
                     ) {
@@ -354,7 +354,7 @@ fun LutManager(
                                 Text(
                                     text = preset.displayName,
                                     color = if (isSelected) ResolveAmber else TextPrimary,
-                                    fontSize = 10.sp,
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
                                     modifier = Modifier.weight(1f)
@@ -370,12 +370,12 @@ fun LutManager(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Spacer(modifier = Modifier.height(3.dp))
                             Text(
                                 text = preset.description,
                                 color = TextMuted,
-                                fontSize = 8.sp,
-                                lineHeight = 10.5.sp,
+                                fontSize = 9.5.sp,
+                                lineHeight = 12.sp,
                                 maxLines = 2
                             )
 
@@ -399,17 +399,44 @@ fun LutManager(
             // ==========================================
             // 4. LUT OPACITY / INTENSITY SLIDER
             // ==========================================
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "LUT Intensity",
-                    color = TextSecondary,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.width(76.dp)
-                )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "LUT Intensity",
+                        color = TextPrimary,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${(lutIntensity * 100).toInt()}%",
+                            color = ResolveAmber,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        // 100% Reset Button
+                        IconButton(
+                            onClick = { onIntensityChange(1.0f) },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Reset Opacity to 100%",
+                                tint = TextMuted,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
 
                 Slider(
                     value = lutIntensity,
@@ -421,33 +448,10 @@ fun LutManager(
                         inactiveTrackColor = Color(0xFF263244)
                     ),
                     modifier = Modifier
-                        .weight(1f)
+                        .fillMaxWidth()
+                        .height(34.dp)
                         .testTag("lut_intensity_slider")
                 )
-
-                Spacer(modifier = Modifier.width(6.dp))
-
-                Text(
-                    text = "${(lutIntensity * 100).toInt()}%",
-                    color = TextPrimary,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.width(36.dp)
-                )
-
-                // 100% Reset Button
-                IconButton(
-                    onClick = { onIntensityChange(1.0f) },
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Reset Opacity to 100%",
-                        tint = TextMuted,
-                        modifier = Modifier.size(13.dp)
-                    )
-                }
             }
         }
     }
@@ -458,6 +462,9 @@ fun LutManager(
  */
 private fun getPresetGradient(preset: LutPreset): Brush {
     return when (preset) {
+        LutPreset.NONE -> Brush.horizontalGradient(
+            listOf(Color(0xFF1E293B), Color(0xFF475569), Color(0xFF94A3B8))
+        )
         LutPreset.SAMSUNG_LOG_TO_REC709 -> Brush.horizontalGradient(
             listOf(Color(0xFF334155), Color(0xFF64748B), Color(0xFFE2E8F0))
         )

@@ -45,7 +45,29 @@ data class RgbCurves(
     val hueVsSat: List<CurvePoint> = defaultFlatHalfCurve(),
     val hueVsLum: List<CurvePoint> = defaultFlatHalfCurve(),
     val lumVsSat: List<CurvePoint> = listOf(CurvePoint(0f, 0.5f), CurvePoint(0.5f, 0.5f), CurvePoint(1f, 0.5f))
-) : Serializable
+) : Serializable {
+    val isIdentity: Boolean
+        get() = isLinearCurve(master) &&
+                isLinearCurve(red) &&
+                isLinearCurve(green) &&
+                isLinearCurve(blue) &&
+                isFlatSecondaryCurve(hueVsHue) &&
+                isFlatSecondaryCurve(hueVsSat) &&
+                isFlatSecondaryCurve(hueVsLum) &&
+                isFlatSecondaryCurve(lumVsSat)
+
+    private fun isLinearCurve(pts: List<CurvePoint>): Boolean {
+        return pts.size == 2 &&
+                kotlin.math.abs(pts[0].x) < 0.001f &&
+                kotlin.math.abs(pts[0].y) < 0.001f &&
+                kotlin.math.abs(pts[1].x - 1f) < 0.001f &&
+                kotlin.math.abs(pts[1].y - 1f) < 0.001f
+    }
+
+    private fun isFlatSecondaryCurve(pts: List<CurvePoint>): Boolean {
+        return pts.all { kotlin.math.abs(it.y - 0.5f) < 0.002f }
+    }
+}
 
 enum class MaskType {
     NONE,
@@ -163,6 +185,11 @@ enum class LutPreset(
     val description: String,
     val category: LutCategory
 ) {
+    NONE(
+        "None (Original)",
+        "Original unmodified video signal without any LUT applied",
+        LutCategory.SAMSUNG_LOG
+    ),
     SAMSUNG_LOG_TO_REC709(
         "Samsung Log → Rec.709 Natural",
         "Official S24 Ultra 10-bit logarithmic recovery with neutral white point",
@@ -288,13 +315,13 @@ data class ColorGradeSettings(
     // DaVinci Resolve Final Output Node: Color Space Transform (CST)
     val cstNode: CstNodeSettings = CstNodeSettings(),
 
-    // Samsung S24 Ultra Log Specific
-    val samsungLogTransform: Boolean = true,
+    // Samsung S24 Ultra Log Specific (Disabled by default so imported videos remain 100% unmodified until edited)
+    val samsungLogTransform: Boolean = false,
     val samsungHighlightRollOff: Float = 0.75f,
-    val samsungDynamicToneMapping: Boolean = true,
+    val samsungDynamicToneMapping: Boolean = false,
 
-    // LUT
-    val activeLut: LutPreset = LutPreset.SAMSUNG_LOG_TO_REC709,
+    // LUT (None by default so imported videos are never altered unless user chooses a LUT)
+    val activeLut: LutPreset = LutPreset.NONE,
     val lutIntensity: Float = 1.0f,
     val lutBypass: Boolean = false,       // Instant A/B preview toggle
     val customLutData: FloatArray? = null,
@@ -321,13 +348,22 @@ data class ColorGradeSettings(
     // State Toggles
     val bypass: Boolean = false
 ) : Serializable {
+    val isIdentity: Boolean
+        get() = !samsungLogTransform &&
+                exposure == 0f && brightness == 0f && contrast == 1f && saturation == 1f &&
+                temperature == 0f && tint == 0f && highlights == 0f && shadows == 0f && colorBoost == 0f &&
+                lift == WheelValue() && gamma == WheelValue() && gain == WheelValue() && offset == WheelValue() &&
+                !logWheels.hasAdjustments &&
+                (activeLut == LutPreset.NONE || lutBypass || lutIntensity <= 0f) &&
+                !cstNode.enabled &&
+                mask.type == MaskType.NONE &&
+                !hslQualifier.enabled &&
+                !effects.grain.enabled && effects.grainIntensity <= 0f &&
+                effects.halationIntensity <= 0f && effects.vignetteIntensity <= 0f &&
+                curves.isIdentity
+
     val hasCustomGrade: Boolean
-        get() = exposure != 0f || brightness != 0f || contrast != 1f || saturation != 1f ||
-                temperature != 0f || tint != 0f || colorBoost != 0f ||
-                lift != WheelValue() || gamma != WheelValue() || gain != WheelValue() || offset != WheelValue() ||
-                activeLut != LutPreset.SAMSUNG_LOG_TO_REC709 ||
-                mask.type != MaskType.NONE || hslQualifier.enabled ||
-                effects.grain.enabled || effects.halationIntensity > 0f || effects.vignetteIntensity > 0f
+        get() = !isIdentity
 }
 
 enum class HslQualifierPreset(

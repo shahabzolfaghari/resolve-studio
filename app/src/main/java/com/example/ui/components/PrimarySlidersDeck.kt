@@ -46,7 +46,7 @@ fun PrimarySlidersDeck(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(12.dp)
         ) {
             // Header
             Row(
@@ -54,55 +54,58 @@ fun PrimarySlidersDeck(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                    .padding(horizontal = 4.dp, vertical = 4.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Tune,
                         contentDescription = null,
                         tint = ResolveAmber,
-                        modifier = Modifier.size(13.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "PRIMARY ADJUSTMENT BARS",
                         color = TextPrimary,
-                        fontSize = 9.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.5.sp
                     )
                 }
 
                 // Reset All Primary Sliders
-                Text(
-                    text = "RESET ALL",
-                    color = ResolveAmber,
-                    fontSize = 8.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .clickable {
-                            onSettingsChange("Reset Primary Sliders") {
-                                it.copy(
-                                    brightness = 0.0f,
-                                    exposure = 0.0f,
-                                    contrast = 1.0f,
-                                    temperature = 0.0f,
-                                    tint = 0.0f,
-                                    saturation = 1.0f,
-                                    shadows = 0.0f,
-                                    highlights = 0.0f,
-                                    colorBoost = 0.0f
-                                )
-                            }
+                Surface(
+                    onClick = {
+                        onSettingsChange("Reset Primary Sliders") {
+                            it.copy(
+                                brightness = 0.0f,
+                                exposure = 0.0f,
+                                contrast = 1.0f,
+                                temperature = 0.0f,
+                                tint = 0.0f,
+                                saturation = 1.0f,
+                                shadows = 0.0f,
+                                highlights = 0.0f,
+                                colorBoost = 0.0f
+                            )
                         }
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                        .testTag("reset_primary_sliders_button")
-                )
+                    },
+                    color = Color(0xFF1A2232),
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.testTag("reset_primary_sliders_button")
+                ) {
+                    Text(
+                        text = "RESET ALL",
+                        color = ResolveAmber,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // 1. Exposure EV Slider (Photometric Stop Multiplier)
             ResolveSliderItem(
@@ -244,23 +247,49 @@ private fun ResolveSliderItem(
     onValueChange: (Float) -> Unit,
     testTag: String
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(28.dp)
-            .padding(horizontal = 4.dp)
+            .padding(horizontal = 4.dp, vertical = 5.dp)
     ) {
-        // Label
-        Text(
-            text = label,
-            color = TextSecondary,
-            fontSize = 9.5.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.width(115.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = label,
+                color = TextPrimary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
 
-        // Slider Bar
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = formattedValue,
+                    color = if (value != defaultValue) activeColor else TextSecondary,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+
+                Spacer(modifier = Modifier.width(6.dp))
+
+                IconButton(
+                    onClick = { onValueChange(defaultValue) },
+                    enabled = value != defaultValue,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.RestartAlt,
+                        contentDescription = "Reset $label",
+                        tint = if (value != defaultValue) activeColor else Color(0xFF334155),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+
         Slider(
             value = value,
             onValueChange = onValueChange,
@@ -271,35 +300,9 @@ private fun ResolveSliderItem(
                 inactiveTrackColor = Color(0xFF1E2638)
             ),
             modifier = Modifier
-                .weight(1f)
-                .height(24.dp)
+                .fillMaxWidth()
+                .height(34.dp)
                 .testTag(testTag)
         )
-
-        Spacer(modifier = Modifier.width(6.dp))
-
-        // Formatted numeric value readout
-        Text(
-            text = formattedValue,
-            color = if (value != defaultValue) activeColor else TextMuted,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            modifier = Modifier.width(48.dp)
-        )
-
-        // Reset icon button
-        IconButton(
-            onClick = { onValueChange(defaultValue) },
-            enabled = value != defaultValue,
-            modifier = Modifier.size(20.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.RestartAlt,
-                contentDescription = "Reset",
-                tint = if (value != defaultValue) activeColor.copy(alpha = 0.7f) else Color(0xFF283244),
-                modifier = Modifier.size(12.dp)
-            )
-        }
     }
 }

@@ -375,17 +375,26 @@ fun CstNodePanel(
             }
 
             if (cst.toneMapping != ToneMappingMethod.OFF) {
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Knee Shoulder",
-                        color = TextSecondary,
-                        fontSize = 9.sp,
-                        modifier = Modifier.width(85.dp)
-                    )
+                Spacer(modifier = Modifier.height(8.dp))
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Knee Shoulder",
+                            color = TextPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = String.format("%.2f", cst.kneeThreshold),
+                            color = ResolveAmber,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                     Slider(
                         value = cst.kneeThreshold,
                         onValueChange = { onCstChange(cst.copy(kneeThreshold = it)) },
@@ -395,15 +404,7 @@ fun CstNodePanel(
                             activeTrackColor = ResolveAmber,
                             inactiveTrackColor = Color(0xFF222B3D)
                         ),
-                        modifier = Modifier.weight(1f).height(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = String.format("%.2f", cst.kneeThreshold),
-                        color = ResolveAmber,
-                        fontSize = 8.5.sp,
-                        fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.width(36.dp)
+                        modifier = Modifier.fillMaxWidth().height(34.dp)
                     )
                 }
             }
@@ -549,15 +550,15 @@ private fun SelectablePill(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(5.dp))
+            .clip(RoundedCornerShape(6.dp))
             .background(if (isSelected) accentColor.copy(alpha = 0.2f) else Color(0xFF131722))
             .border(
-                0.5.dp,
+                0.8.dp,
                 if (isSelected) accentColor else Color(0xFF222B3A),
-                RoundedCornerShape(5.dp)
+                RoundedCornerShape(6.dp)
             )
             .clickable { onClick() }
-            .padding(horizontal = 8.dp, vertical = 5.dp)
+            .padding(horizontal = 10.dp, vertical = 7.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -567,7 +568,7 @@ private fun SelectablePill(
             Text(
                 text = label,
                 color = if (isSelected) accentColor else TextSecondary,
-                fontSize = 8.5.sp,
+                fontSize = 11.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 maxLines = 1
             )
@@ -576,7 +577,7 @@ private fun SelectablePill(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
                     tint = accentColor,
-                    modifier = Modifier.size(10.dp)
+                    modifier = Modifier.size(13.dp)
                 )
             }
         }

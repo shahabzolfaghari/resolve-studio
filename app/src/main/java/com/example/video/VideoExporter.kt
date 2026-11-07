@@ -323,7 +323,8 @@ object VideoExporter {
                     try {
                         val extracted = exportRetriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
                         if (extracted != null) {
-                            currentGradedFrame = SamsungLogColorScience.gradeBitmap(extracted, settings)
+                            val softExtracted = SamsungLogColorScience.ensureSoftwareBitmap(extracted)
+                            currentGradedFrame = SamsungLogColorScience.gradeBitmap(softExtracted, settings)
                         }
                     } catch (_: Exception) {}
                 }

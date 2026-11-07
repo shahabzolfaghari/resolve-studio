@@ -208,9 +208,9 @@ fun CurvesEditor(
                             Text(
                                 text = mode.label,
                                 color = if (isModeSelected) ResolveAmber else TextSecondary,
-                                fontSize = 9.5.sp,
+                                fontSize = 11.5.sp,
                                 fontWeight = if (isModeSelected) FontWeight.Bold else FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
                     }
@@ -230,9 +230,9 @@ fun CurvesEditor(
                                     }
                                 }
                             },
-                            modifier = Modifier.size(28.dp).testTag("delete_curve_knot")
+                            modifier = Modifier.size(34.dp).testTag("delete_curve_knot")
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete point", tint = ResolveRed, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Delete, contentDescription = "Delete point", tint = ResolveRed, modifier = Modifier.size(18.dp))
                         }
                     }
 
@@ -241,14 +241,14 @@ fun CurvesEditor(
                             updateCurrentPoints(defaultNeutralPoints)
                             selectedPointIndex = null
                         },
-                        modifier = Modifier.size(28.dp).testTag("reset_curve")
+                        modifier = Modifier.size(34.dp).testTag("reset_curve")
                     ) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Reset curve", tint = TextMuted, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Refresh, contentDescription = "Reset curve", tint = TextMuted, modifier = Modifier.size(18.dp))
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Sub-Channel Selector Row
             if (editorMode == CurveEditorMode.YRGB_SPLINE) {
@@ -260,9 +260,11 @@ fun CurvesEditor(
                     // Channel Segmented Buttons (Master Y, Red, Green, Blue)
                     Row(
                         modifier = Modifier
+                            .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFF10131B))
-                            .padding(2.dp)
+                            .padding(2.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         CurveChannel.values().forEach { channel ->
                             val isSelected = selectedChannel == channel
@@ -273,26 +275,27 @@ fun CurvesEditor(
                                 },
                                 color = if (isSelected) channel.color.copy(alpha = 0.2f) else Color.Transparent,
                                 shape = RoundedCornerShape(6.dp),
-                                modifier = Modifier.testTag("curve_tab_${channel.label.lowercase()}")
+                                modifier = Modifier.weight(1f).testTag("curve_tab_${channel.label.lowercase()}")
                             ) {
                                 Text(
                                     text = channel.label,
                                     color = if (isSelected) channel.color else TextSecondary,
-                                    fontSize = 10.sp,
+                                    fontSize = 11.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                                 )
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // 1-Tap Cinema Curve Presets Row
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState())
@@ -301,7 +304,7 @@ fun CurvesEditor(
                         imageVector = Icons.Default.AutoGraph,
                         contentDescription = "Curve Presets",
                         tint = ResolveAmber,
-                        modifier = Modifier.size(13.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     CurveQuickPreset.values().forEach { preset ->
                         Surface(
@@ -310,7 +313,7 @@ fun CurvesEditor(
                                 selectedPointIndex = null
                             },
                             color = Color(0xFF141923),
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(8.dp),
                             border = CardDefaults.outlinedCardBorder().copy(
                                 brush = androidx.compose.ui.graphics.SolidColor(StudioCardBorder)
                             ),
@@ -319,9 +322,9 @@ fun CurvesEditor(
                             Text(
                                 text = preset.label,
                                 color = TextSecondary,
-                                fontSize = 9.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
                     }
@@ -350,21 +353,21 @@ fun CurvesEditor(
                             Text(
                                 text = sec.label,
                                 color = if (isSelected) sec.color else TextSecondary,
-                                fontSize = 9.sp,
+                                fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 5.dp)
+                                modifier = Modifier.padding(vertical = 7.dp)
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // 1-Tap DaVinci Resolve Color Target Anchor Pins (Red, Skin, Yellow, Green, Cyan, Blue, Magenta)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState())
@@ -391,7 +394,7 @@ fun CurvesEditor(
                                 selectedPointIndex = sorted.indexOfFirst { kotlin.math.abs(it.x - target.xNorm) < 0.025f }
                             },
                             color = Color(0xFF141923),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(14.dp),
                             border = CardDefaults.outlinedCardBorder().copy(
                                 brush = androidx.compose.ui.graphics.SolidColor(target.dotColor.copy(alpha = 0.65f))
                             ),
@@ -399,19 +402,19 @@ fun CurvesEditor(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.5.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(7.dp)
+                                        .size(8.dp)
                                         .clip(RoundedCornerShape(4.dp))
                                         .background(target.dotColor)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(5.dp))
                                 Text(
                                     text = target.label,
                                     color = TextPrimary,
-                                    fontSize = 8.5.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -426,7 +429,7 @@ fun CurvesEditor(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(185.dp)
+                    .height(225.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFF0F1218))
                     .border(1.dp, StudioCardBorder, RoundedCornerShape(8.dp))
@@ -740,7 +743,7 @@ fun CurvesEditor(
                         selectedSecondaryChannel.subtitle
                     },
                     color = TextMuted,
-                    fontSize = 9.sp
+                    fontSize = 11.sp
                 )
                 selectedPointIndex?.let { idx ->
                     if (idx < currentPoints.size) {
@@ -752,7 +755,7 @@ fun CurvesEditor(
                                 String.format("X: %.2f  Δ: %+.2f", pt.x, pt.y - 0.5f)
                             },
                             color = ResolveAmber,
-                            fontSize = 9.sp,
+                            fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold
                         )

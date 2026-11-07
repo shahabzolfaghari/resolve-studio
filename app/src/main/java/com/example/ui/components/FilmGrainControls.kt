@@ -308,19 +308,31 @@ private fun GrainSliderRow(
     onValueChange: (Float) -> Unit,
     testTag: String
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 1.dp)
+            .padding(vertical = 4.dp)
     ) {
-        Text(
-            text = label,
-            color = TextSecondary,
-            fontSize = 9.5.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.width(78.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = label,
+                color = TextPrimary,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = displayValue,
+                color = activeColor,
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         Slider(
             value = value,
@@ -332,20 +344,9 @@ private fun GrainSliderRow(
                 inactiveTrackColor = Color(0xFF202636)
             ),
             modifier = Modifier
-                .weight(1f)
+                .fillMaxWidth()
+                .height(34.dp)
                 .testTag(testTag)
-        )
-
-        Spacer(modifier = Modifier.width(6.dp))
-
-        Text(
-            text = displayValue,
-            color = TextPrimary,
-            fontSize = 9.sp,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.width(42.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.End
         )
     }
 }

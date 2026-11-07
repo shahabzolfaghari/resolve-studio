@@ -12,12 +12,43 @@ enum class SampleScene(val sceneName: String, val subtitle: String) {
 
 object SampleMediaGenerator {
 
+    private fun getSceneImageFile(scene: SampleScene): java.io.File? {
+        val baseDir = java.io.File("/Users/metteore/antigravity/ResolveStudio-2026-11-05-a63fb/media")
+        if (!baseDir.exists()) baseDir.mkdirs()
+        val names = listOf(
+            "scene_${scene.name.lowercase()}.png",
+            "scene_${scene.name.lowercase()}.jpg",
+            "${scene.name.lowercase()}.png",
+            "${scene.name.lowercase()}.jpg",
+            when (scene) {
+                SampleScene.S24_LOG_SUNSET_PORTRAIT -> "sunset_portrait.png"
+                SampleScene.S24_LOG_NEON_CITY -> "neon_city.png"
+                SampleScene.S24_LOG_ALPINE_LAKE -> "alpine_lake.png"
+                SampleScene.S24_LOG_CINEMA_INTERIOR -> "cinema_interior.png"
+            }
+        )
+        return names.map { java.io.File(baseDir, it) }.firstOrNull { it.exists() }
+    }
+
     /**
      * Generates a realistic Samsung S24 Ultra Log 4K simulated frame (rendered at crisp HD/4K preview resolution).
      * Samsung Log is characterized by flat contrast, raised black level (~15-20% code value),
      * and compressed highlights preserving full detail before grading.
      */
     fun generateLogFrame(scene: SampleScene, frameIndex: Int = 0, width: Int = 1280, height: Int = 720): Bitmap {
+        val customFile = getSceneImageFile(scene)
+        if (customFile != null) {
+            try {
+                val decoded = BitmapFactory.decodeFile(customFile.absolutePath)
+                if (decoded != null) {
+                    val scaled = Bitmap.createScaledBitmap(decoded, width, height, true)
+                    val mutableBmp = scaled.copy(Bitmap.Config.ARGB_8888, true)
+                    applyFlatLogCurve(mutableBmp)
+                    return mutableBmp
+                }
+            } catch (_: Exception) {}
+        }
+
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)

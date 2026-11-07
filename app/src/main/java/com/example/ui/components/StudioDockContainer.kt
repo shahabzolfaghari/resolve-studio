@@ -158,6 +158,39 @@ fun StudioDockContainer(
                             softWrap = false
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // 1-Tap Quick CST (Log -> Rec.709) Toggle Pill before editing
+                    Surface(
+                        onClick = {
+                            val nextEnabled = !settings.cstNode.enabled
+                            onSettingsChange(
+                                if (nextEnabled) "Enable CST (Log → Rec.709)" else "Bypass CST (Raw Log)"
+                            ) {
+                                it.copy(cstNode = it.cstNode.copy(enabled = nextEnabled))
+                            }
+                        },
+                        color = if (settings.cstNode.enabled) ResolveGreen.copy(alpha = 0.22f) else Color(0xFF1B2332),
+                        shape = RoundedCornerShape(6.dp),
+                        border = CardDefaults.outlinedCardBorder().copy(
+                            brush = androidx.compose.ui.graphics.SolidColor(
+                                if (settings.cstNode.enabled) ResolveGreen else ResolveCyan.copy(alpha = 0.65f)
+                            )
+                        ),
+                        modifier = Modifier.testTag("quick_cst_log_to_rec709_button")
+                    ) {
+                        Text(
+                            text = if (settings.cstNode.enabled) "CST 709: ON" else "LOG → CST 709",
+                            color = if (settings.cstNode.enabled) ResolveGreen else ResolveCyan,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
 
                 // Scope & Tool Monitor View Toggles

@@ -46,15 +46,16 @@ enum class GamutMappingMethod(val displayName: String) {
 
 /**
  * DaVinci Resolve Studio Color Space Transform (CST) Node configuration.
- * Placed as the final transformation node in the grading pipeline to map
- * wide-gamut log footage into standardized delivery color spaces (Rec.709).
+ * Transforms flat camera Log footage (Samsung S24 Log, DaVinci Wide Gamut, ARRI LogC4)
+ * into standardized Rec.709 space before primary grading, curves, and Rec.709 3D LUTs.
+ * Starts disabled (enabled = false) on import so Log video stays untouched Log until enabled by the user.
  */
 data class CstNodeSettings(
     val enabled: Boolean = false,
-    val inputColorSpace: InputColorSpace = InputColorSpace.DAVINCI_WIDE_GAMUT,
-    val inputGamma: InputGamma = InputGamma.DAVINCI_INTERMEDIATE,
+    val inputColorSpace: InputColorSpace = InputColorSpace.SAMSUNG_S24_GAMUT,
+    val inputGamma: InputGamma = InputGamma.SAMSUNG_LOG,
     val outputColorSpace: OutputColorSpace = OutputColorSpace.REC709,
-    val outputGamma: OutputGamma = OutputGamma.GAMMA_2_4,
+    val outputGamma: OutputGamma = OutputGamma.REC709,
     val toneMapping: ToneMappingMethod = ToneMappingMethod.DAVINCI,
     val gamutMapping: GamutMappingMethod = GamutMappingMethod.SATURATION_COMPRESSION,
     val kneeThreshold: Float = 0.75f,

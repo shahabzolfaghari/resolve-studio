@@ -117,9 +117,11 @@ fun CstNodePanel(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 NodeBadge(
-                    label = "01 S24 LOG",
-                    isActive = true,
-                    onClick = { onNavigateToTab(StudioToolTab.EFFECTS) }
+                    label = "01 CST (LOG→709)",
+                    isActive = cst.enabled,
+                    isCurrent = true,
+                    accentColor = if (cst.enabled) ResolveAmber else TextMuted,
+                    onClick = { onCstChange(cst.copy(enabled = !cst.enabled)) }
                 )
                 NodeConnector()
                 NodeBadge(
@@ -141,12 +143,77 @@ fun CstNodePanel(
                 )
                 NodeConnector()
                 NodeBadge(
-                    label = "05 CST OUT",
-                    isActive = cst.enabled,
-                    isCurrent = true,
-                    accentColor = if (cst.enabled) ResolveAmber else TextMuted,
-                    onClick = { onCstChange(cst.copy(enabled = !cst.enabled)) }
+                    label = "05 3D LUT",
+                    isActive = true,
+                    onClick = { onNavigateToTab(StudioToolTab.LUTS) }
                 )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Prominent 1-Tap Log -> Rec.709 Base Transform Banner (Before Editing)
+            Surface(
+                onClick = {
+                    onCstChange(
+                        if (!cst.enabled) {
+                            cst.copy(
+                                enabled = true,
+                                inputColorSpace = InputColorSpace.SAMSUNG_S24_GAMUT,
+                                inputGamma = InputGamma.SAMSUNG_LOG,
+                                outputColorSpace = OutputColorSpace.REC709,
+                                outputGamma = OutputGamma.REC709,
+                                toneMapping = ToneMappingMethod.DAVINCI
+                            )
+                        } else {
+                            cst.copy(enabled = false)
+                        }
+                    )
+                },
+                color = if (cst.enabled) ResolveGreen.copy(alpha = 0.18f) else Color(0xFF1A2436),
+                shape = RoundedCornerShape(8.dp),
+                border = CardDefaults.outlinedCardBorder().copy(
+                    brush = androidx.compose.ui.graphics.SolidColor(
+                        if (cst.enabled) ResolveGreen else ResolveAmber
+                    )
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("cst_primary_log_to_rec709_button")
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (cst.enabled) {
+                                "CST ACTIVE: LOG → REC.709 TRANSFORMED"
+                            } else {
+                                "CONVERT LOG → REC.709 BEFORE EDITING"
+                            },
+                            color = if (cst.enabled) ResolveGreen else ResolveAmber,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text(
+                            text = if (cst.enabled) {
+                                "${cst.inputGamma.displayName} → ${cst.outputColorSpace.displayName} (Tap to return to flat Log)"
+                            } else {
+                                "Video is currently flat Log. Tap to transform Log to Rec.709 via CST before grading/LUTs."
+                            },
+                            color = TextSecondary,
+                            fontSize = 10.sp
+                        )
+                    }
+                    Icon(
+                        imageVector = if (cst.enabled) Icons.Default.CheckCircle else Icons.Default.AutoFixHigh,
+                        contentDescription = null,
+                        tint = if (cst.enabled) ResolveGreen else ResolveAmber,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -157,13 +224,13 @@ fun CstNodePanel(
             Text(
                 text = "STUDIO CST TEMPLATES",
                 color = TextMuted,
-                fontSize = 8.5.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 letterSpacing = 0.5.sp
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier
@@ -172,9 +239,27 @@ fun CstNodePanel(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 CstTemplateChip(
+                    title = "Samsung S24 Log → Rec.709",
+                    subtitle = "10-bit BT.2020 Broadcast",
+                    isSelected = cst.enabled && cst.inputColorSpace == InputColorSpace.SAMSUNG_S24_GAMUT && cst.outputColorSpace == OutputColorSpace.REC709,
+                    onClick = {
+                        onCstChange(
+                            cst.copy(
+                                enabled = true,
+                                inputColorSpace = InputColorSpace.SAMSUNG_S24_GAMUT,
+                                inputGamma = InputGamma.SAMSUNG_LOG,
+                                outputColorSpace = OutputColorSpace.REC709,
+                                outputGamma = OutputGamma.REC709,
+                                toneMapping = ToneMappingMethod.DAVINCI
+                            )
+                        )
+                    }
+                )
+
+                CstTemplateChip(
                     title = "DaVinci Wide Gamut → Rec.709",
                     subtitle = "Resolve Intermediate Standard",
-                    isSelected = cst.inputColorSpace == InputColorSpace.DAVINCI_WIDE_GAMUT && cst.outputColorSpace == OutputColorSpace.REC709,
+                    isSelected = cst.enabled && cst.inputColorSpace == InputColorSpace.DAVINCI_WIDE_GAMUT && cst.outputColorSpace == OutputColorSpace.REC709,
                     onClick = {
                         onCstChange(
                             cst.copy(
@@ -190,27 +275,9 @@ fun CstNodePanel(
                 )
 
                 CstTemplateChip(
-                    title = "Samsung S24 Log → Rec.709",
-                    subtitle = "10-bit BT.2020 Broadcast",
-                    isSelected = cst.inputColorSpace == InputColorSpace.SAMSUNG_S24_GAMUT && cst.outputColorSpace == OutputColorSpace.REC709,
-                    onClick = {
-                        onCstChange(
-                            cst.copy(
-                                enabled = true,
-                                inputColorSpace = InputColorSpace.SAMSUNG_S24_GAMUT,
-                                inputGamma = InputGamma.SAMSUNG_LOG,
-                                outputColorSpace = OutputColorSpace.REC709,
-                                outputGamma = OutputGamma.GAMMA_2_4,
-                                toneMapping = ToneMappingMethod.DAVINCI
-                            )
-                        )
-                    }
-                )
-
-                CstTemplateChip(
                     title = "Samsung S24 Log → DCI-P3",
                     subtitle = "Theatrical Wide Color",
-                    isSelected = cst.outputColorSpace == OutputColorSpace.DCI_P3,
+                    isSelected = cst.enabled && cst.outputColorSpace == OutputColorSpace.DCI_P3,
                     onClick = {
                         onCstChange(
                             cst.copy(

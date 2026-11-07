@@ -19,6 +19,35 @@ object SamsungLogColorScience {
     private val pixelBufferLock = Any()
     private var reusablePixels = IntArray(0)
 
+    // Precomputed 1024-entry EOTF (Input Gamma -> Linear) & OETF (Linear -> Output Gamma) LUTs for zero-pow() CST
+    private val SAMSUNG_LOG_EOTF_LUT = FloatArray(1024) { i ->
+        val x = i / 1023f
+        ((samsungLogToLinear(x) - 0.012f).coerceAtLeast(0f) * 1.65f).coerceIn(0f, 1f)
+    }
+    private val DWG_INTERMEDIATE_EOTF_LUT = FloatArray(1024) { i ->
+        val x = i / 1023f
+        ((samsungLogToLinear(x) - 0.010f).coerceAtLeast(0f) * 1.55f).coerceIn(0f, 1f)
+    }
+    private val ARRI_LOGC4_EOTF_LUT = FloatArray(1024) { i ->
+        val x = i / 1023f
+        (((exp((x - 0.50f) / 0.22f) - 0.09f) / 5.2f).coerceAtLeast(0f) * 1.55f).coerceIn(0f, 1f)
+    }
+    private val REC709_EOTF_LUT = FloatArray(1024) { i ->
+        (i / 1023f).pow(2.4f).coerceIn(0f, 1f)
+    }
+    private val LINEAR_IDENTITY_LUT = FloatArray(1024) { i -> i / 1023f }
+
+    private val GAMMA_24_OETF_LUT = FloatArray(1024) { i ->
+        (i / 1023f).pow(1f / 2.4f).coerceIn(0f, 1f)
+    }
+    private val GAMMA_22_OETF_LUT = FloatArray(1024) { i ->
+        (i / 1023f).pow(1f / 2.2f).coerceIn(0f, 1f)
+    }
+    private val REC709_OETF_LUT = FloatArray(1024) { i ->
+        val l = i / 1023f
+        (if (l < 0.018f) 4.5f * l else 1.099f * l.pow(0.45f) - 0.099f).coerceIn(0f, 1f)
+    }
+
     /**
      * Ensures a Bitmap is backed by accessible CPU memory (ARGB_8888) rather than Config.HARDWARE.
      * Prevents IllegalStateException crashes on 10-bit HEVC / HDR hardware-decoded frames.
@@ -569,10 +598,16 @@ object SamsungLogColorScience {
                             val origG = rawG / 255f
                             val origB = rawB / 255f
 
-                            // 1. Instant O(1) Precomputed Log to Linear & Dynamic Tone Map
+                            // 1. Input Camera Log / CST Node Transform (Log -> Rec.709 before user grading & LUTs)
+                            // Note: Imported video stays 100% raw flat Log until the user enables CST or edits!
                             var r = logToLinearLut[rawR]
                             var g = logToLinearLut[rawG]
                             var b = logToLinearLut[rawB]
+
+                            if (settings.cstNode.enabled) {
+                                applyColorSpaceTransformFast(r, g, b, settings.cstNode, scratchCst)
+                                r = scratchCst[0]; g = scratchCst[1]; b = scratchCst[2]
+                            }
 
                             // Normalized camera base (used outside Power Window masks)
                             val baseR = r
@@ -855,13 +890,7 @@ object SamsungLogColorScience {
                                 }
                             }
 
-                            // 10. DaVinci Resolve Final Output Node: Color Space Transform (CST)
-                            if (settings.cstNode.enabled) {
-                                applyColorSpaceTransformFast(r, g, b, settings.cstNode, scratchCst)
-                                r = scratchCst[0]; g = scratchCst[1]; b = scratchCst[2]
-                            }
-
-                            // 11. False Color Exposure Metering
+                            // 10. False Color Exposure Metering
                             if (settings.showFalseColor) {
                                 evaluateFalseColorFast(r, g, b, scratchFc)
                                 r = scratchFc[0]; g = scratchFc[1]; b = scratchFc[2]
@@ -1310,8 +1339,9 @@ object SamsungLogColorScience {
     }
 
     /**
-     * DaVinci Resolve Color Space Transform (CST) Output Node (Zero Allocation).
-     * Maps wide-gamut log signals (DWG, BT.2020) to output delivery spaces (Rec.709, DCI-P3).
+     * DaVinci Resolve Color Space Transform (CST) Node (Zero Allocation, O(1) Gamma LUTs).
+     * Transforms flat Log signals (Samsung S24 Log, DWG, ARRI LogC4) into standardized
+     * Rec.709 / DCI-P3 space before grading and Rec.709 3D LUTs.
      */
     fun applyColorSpaceTransformFast(
         inR: Float,
@@ -1325,9 +1355,17 @@ object SamsungLogColorScience {
             return
         }
 
-        var r = inR
-        var g = inG
-        var b = inB
+        // 0. Decode Input Gamma (Log EOTF -> Scene Linear Light) using precomputed 1024-entry LUT
+        val inLut = when (cst.inputGamma) {
+            InputGamma.SAMSUNG_LOG -> SAMSUNG_LOG_EOTF_LUT
+            InputGamma.DAVINCI_INTERMEDIATE -> DWG_INTERMEDIATE_EOTF_LUT
+            InputGamma.ARRI_LOGC4 -> ARRI_LOGC4_EOTF_LUT
+            InputGamma.REC709 -> REC709_EOTF_LUT
+            InputGamma.LINEAR -> LINEAR_IDENTITY_LUT
+        }
+        var r = inLut[(inR.coerceIn(0f, 1f) * 1023f).toInt()]
+        var g = inLut[(inG.coerceIn(0f, 1f) * 1023f).toInt()]
+        var b = inLut[(inB.coerceIn(0f, 1f) * 1023f).toInt()]
 
         // 1. Color Gamut Matrix Transformation (to Linear Rec.709 space)
         when (cst.inputColorSpace) {
@@ -1381,7 +1419,7 @@ object SamsungLogColorScience {
             }
         }
 
-        // 2. DaVinci Tone Mapping Method
+        // 2. DaVinci Tone Mapping Method (Fast rational knee compression, zero exp() overhead)
         when (cst.toneMapping) {
             ToneMappingMethod.DAVINCI -> {
                 // Saturation-Preserving Luminance Shoulder Roll-Off
@@ -1389,7 +1427,8 @@ object SamsungLogColorScience {
                 val knee = cst.kneeThreshold.coerceIn(0.5f, 0.95f)
                 if (lum > knee && lum > 0f) {
                     val excess = lum - knee
-                    val compressedLum = knee + (1f - knee) * (1f - exp(-excess / (1f - knee)))
+                    val span = (1f - knee).coerceAtLeast(0.05f)
+                    val compressedLum = knee + span * (excess / (excess + span))
                     val ratio = (compressedLum / lum).coerceIn(0f, 1f)
                     r *= ratio
                     g *= ratio
@@ -1404,7 +1443,10 @@ object SamsungLogColorScience {
             }
             ToneMappingMethod.LUMINANCE_ONLY -> {
                 val lum = (LR * r + LG * g + LB * b).coerceIn(0f, 1f)
-                val compressed = if (lum > 0.8f) 0.8f + (1f - exp(-(lum - 0.8f) / 0.2f)) * 0.2f else lum
+                val compressed = if (lum > 0.8f) {
+                    val ex = lum - 0.8f
+                    0.8f + 0.2f * (ex / (ex + 0.2f))
+                } else lum
                 val scale = if (lum == 0f) 1f else compressed / lum
                 r *= scale; g *= scale; b *= scale
             }
@@ -1425,32 +1467,15 @@ object SamsungLogColorScience {
             }
         }
 
-        // 4. Output Gamma OETF encoding
-        r = r.coerceIn(0f, 1f)
-        g = g.coerceIn(0f, 1f)
-        b = b.coerceIn(0f, 1f)
-
-        when (cst.outputGamma) {
-            OutputGamma.GAMMA_2_4 -> {
-                r = r.pow(1f / 2.4f)
-                g = g.pow(1f / 2.4f)
-                b = b.pow(1f / 2.4f)
-            }
-            OutputGamma.GAMMA_2_2 -> {
-                r = r.pow(1f / 2.2f)
-                g = g.pow(1f / 2.2f)
-                b = b.pow(1f / 2.2f)
-            }
-            OutputGamma.REC709, OutputGamma.SRGB -> {
-                r = encodeRec709Gamma(r)
-                g = encodeRec709Gamma(g)
-                b = encodeRec709Gamma(b)
-            }
+        // 4. Output Gamma OETF encoding using precomputed 1024-entry LUT
+        val outLut = when (cst.outputGamma) {
+            OutputGamma.GAMMA_2_4 -> GAMMA_24_OETF_LUT
+            OutputGamma.GAMMA_2_2 -> GAMMA_22_OETF_LUT
+            OutputGamma.REC709, OutputGamma.SRGB -> REC709_OETF_LUT
         }
-
-        out[0] = r.coerceIn(0f, 1f)
-        out[1] = g.coerceIn(0f, 1f)
-        out[2] = b.coerceIn(0f, 1f)
+        out[0] = outLut[(r.coerceIn(0f, 1f) * 1023f).toInt()]
+        out[1] = outLut[(g.coerceIn(0f, 1f) * 1023f).toInt()]
+        out[2] = outLut[(b.coerceIn(0f, 1f) * 1023f).toInt()]
     }
 
     /**

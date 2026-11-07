@@ -92,10 +92,9 @@ class ExampleRobolectricTest {
     assertEquals(false, vm.gradeSettings.value.cstNode.enabled)
 
     // Populate 4 clips to test multi-clip timeline independent grades and copy/paste
-    vm.addClipToTimeline(com.example.video.SampleScene.S24_LOG_SUNSET_PORTRAIT)
-    vm.addClipToTimeline(com.example.video.SampleScene.S24_LOG_NEON_CYBERPUNK)
-    vm.addClipToTimeline(com.example.video.SampleScene.S24_LOG_FOREST_STREAM)
-    vm.addClipToTimeline(com.example.video.SampleScene.S24_LOG_STUDIO_CHART)
+    com.example.video.SampleScene.values().take(4).forEach { scene ->
+      vm.addClipToTimeline(scene)
+    }
     vm.selectTimelineClip(0)
 
     assertEquals(4, vm.timelineClips.value.size)
@@ -173,5 +172,31 @@ class ExampleRobolectricTest {
     assertEquals(256, lut.size)
     // Red seam: values at 0 and 255 should be smooth and close to each other
     assertTrue("Boundary 0 (${lut[0]}) and 255 (${lut[255]}) should match closely", kotlin.math.abs(lut[0] - lut[255]) < 0.05f)
+  }
+
+  @Test
+  fun `test log video stays untouched log until user enables cst to rec709 before editing`() {
+    val bmp = Bitmap.createBitmap(20, 20, Bitmap.Config.ARGB_8888)
+    // Flat Log shadow pixel (~36 / 255 = 0.141)
+    val logShadow = (0xFF shl 24) or (36 shl 16) or (36 shl 8) or 36
+    for (y in 0 until 20) {
+      for (x in 0 until 20) {
+        bmp.setPixel(x, y, logShadow)
+      }
+    }
+
+    // 1. Default settings on import: video stays 100% untouched flat Log (pixel 36 remains 36)
+    val defaultSettings = com.example.model.ColorGradeSettings()
+    assertTrue(defaultSettings.isIdentity)
+    val untouched = SamsungLogColorScience.gradeBitmap(bmp, defaultSettings)
+    assertEquals(36, android.graphics.Color.red(untouched.getPixel(10, 10)))
+
+    // 2. User enables CST (Samsung Log -> Rec.709) before editing: flat Log shadow (36) transforms to true Rec.709 black (< 15)
+    val cstEnabledSettings = defaultSettings.copy(
+      cstNode = defaultSettings.cstNode.copy(enabled = true)
+    )
+    val cstTransformed = SamsungLogColorScience.gradeBitmap(bmp, cstEnabledSettings)
+    val rec709Black = android.graphics.Color.red(cstTransformed.getPixel(10, 10))
+    assertTrue("CST Log->Rec.709 should expand flat Log shadow (36) to deep Rec.709 black ($rec709Black < 15)", rec709Black < 15)
   }
 }
